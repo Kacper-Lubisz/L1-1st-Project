@@ -3,8 +3,9 @@
 const images = [];
 let imgIndex = -1;
 let img;
-let paint;
-const subStep = 800;
+let paint = [];
+const particleCount = 50;
+let stepsPerFrame = 15;
 let z = 0;
 let isStop = false;
 
@@ -20,7 +21,10 @@ function setup() {
 
     img = createImage(width, height);
     nextImage();
-    paint = new Paint(createVector(width / 2, height / 2));
+    for (let i = 0; i < particleCount; i++) {
+        paint.push(new Particle());
+    }
+
     background(255, 255, 255);
     colorMode(RGB, 255, 255, 255, 255);
 }
@@ -28,11 +32,13 @@ function setup() {
 function draw() {
     //console.log(frameRate());
     if (!isStop) {
-        for (let i = 0; i < subStep; i++) {
-            paint.update();
-            paint.show();
-            z += 0.01;
+        for (let i = 0; i < particleCount; i++) {
+            for (let j = 0; j < stepsPerFrame; j++) {
+                paint[i].update();
+                paint[i].show();
+            }
         }
+        z += 0.01;
     }
     //background(255);
     //image(img, 0, 0, width, height);
@@ -68,7 +74,7 @@ function touchStarted() {
 
 function nextImage() {
     if (!img) return;
-    imgIndex = (++imgIndex) % images.length;
+    imgIndex = (imgIndex + 1) % images.length;
     let targetImg = images[imgIndex];
     img.copy(targetImg, 0, 0, targetImg.width, targetImg.height, 0, 0, img.width, img.height);
     //img.resize(width, height);
