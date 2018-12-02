@@ -1,25 +1,26 @@
-var imgs = [];
-var imgIndex = -1;
-var img;
-var paint;
-var subStep = 800;
-var z = 0;
-var isStop = false;
+"use strict";
+
+const images = [];
+let imgIndex = -1;
+let img;
+let paint;
+const subStep = 800;
+let z = 0;
+let isStop = false;
 
 function preload() {
-    imgs[0] = loadImage("test1.png");
-    imgs[1] = loadImage("test2.png");
-    imgs[2] = loadImage("test3.png");
+    images[0] = loadImage("test1.png");
+    images[1] = loadImage("test2.png");
+    images[2] = loadImage("test3.png");
 }
 
 function setup() {
-    if(windowWidth < 600)
-        createCanvas(windowWidth, windowWidth);
-    else
-        createCanvas(600, 600);
+    const size = max(min(windowWidth, windowHeight), 600);
+    createCanvas(size, size);
+
     img = createImage(width, height);
     nextImage();
-    paint = new Paint(createVector(width/2, height/2));
+    paint = new Paint(createVector(width / 2, height / 2));
     background(255, 255, 255);
     colorMode(RGB, 255, 255, 255, 255);
 }
@@ -27,10 +28,10 @@ function setup() {
 function draw() {
     //console.log(frameRate());
     if (!isStop) {
-        for (var i = 0 ; i < subStep ; i++) {
+        for (let i = 0; i < subStep; i++) {
             paint.update();
             paint.show();
-            z+= 0.01;
+            z += 0.01;
         }
     }
     //background(255);
@@ -38,18 +39,16 @@ function draw() {
 }
 
 function fget(i, j) {
-    var index = j * img.width + i;
-    index *= 4;
-    return color(img.pixels[index], img.pixels[index+1], img.pixels[index+2], img.pixels[index+3]);
+    const index = (j * img.width + i) * 4;
+    return color(img.pixels[index], img.pixels[index + 1], img.pixels[index + 2], img.pixels[index + 3]);
 }
 
 function fset(i, j, c) {
-    var index = j * img.width + i;
-    index *= 4;
+    const index = (j * img.width + i) * 4;
     img.pixels[index] = red(c);
-    img.pixels[index+1] = green(c);
-    img.pixels[index+2] = blue(c);
-    img.pixels[index+3] = alpha(c);
+    img.pixels[index + 1] = green(c);
+    img.pixels[index + 2] = blue(c);
+    img.pixels[index + 3] = alpha(c);
 }
 
 function keyPressed() {
@@ -58,17 +57,19 @@ function keyPressed() {
         isStop = !isStop;
     }
 }
+
 function mouseClicked() {
     nextImage();
 }
+
 function touchStarted() {
     nextImage();
 }
 
 function nextImage() {
     if (!img) return;
-    imgIndex = (++imgIndex) % imgs.length;
-    var targetImg = imgs[imgIndex];
+    imgIndex = (++imgIndex) % images.length;
+    let targetImg = images[imgIndex];
     img.copy(targetImg, 0, 0, targetImg.width, targetImg.height, 0, 0, img.width, img.height);
     //img.resize(width, height);
     img.loadPixels();
