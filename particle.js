@@ -3,7 +3,7 @@
 class Particle {
     constructor(img) {
 		
-		this.img = img
+		this.img = img;
 
         this.ppos = createVector(0, 0);
         this.pos = createVector(0, 0);
@@ -38,13 +38,13 @@ class Particle {
         for (let i = 0; i < step; i++) {
             const x = floor(x1 + (x2 - x1) * i / step);
             const y = floor(y1 + (y2 - y1) * i / step);
-            const originColor = this.img.fget(x, y);
+            const originColor = this.img.getColor(x, y);
 
             originColor.setRed(min(red(originColor) + 50, 255));
             originColor.setGreen(min(green(originColor) + 50, 255));
             originColor.setBlue(min(blue(originColor) + 50, 255));
 
-            this.img.fset(x, y, originColor);
+            this.img.setColor(x, y, originColor);
 
         }
     }
@@ -62,6 +62,8 @@ class Particle {
             canvas.strokeWeight(boldWeight);
             this.drawColor.setAlpha(this.drawAlpha);
         }
+        console.log(this.pos);
+        console.log(this.ppos);
         canvas.line(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
 
         this.fadeLineFromImg(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
@@ -74,14 +76,17 @@ class Particle {
         // Add pixels force
         let target = createVector(0, 0);
         let count = 0;
+
+        // this is a convolution kernel
         for (let i = -floor(this.perception / 2); i < this.perception / 2; i++) {
             for (let j = -floor(this.perception / 2); j < this.perception / 2; j++) {
                 if (i === 0 && j === 0)
                     continue;
                 const x = floor(this.pos.x + i);
                 const y = floor(this.pos.y + j);
-                if (x <= img.width - 1 && x >= 0 && y < img.height - 1 && y >= 0) {
-                    const c = this.img.fget(x, y);
+                if (x <= this.img.width - 1 && x >= 0 && y < this.img.height - 1 && y >= 0) {
+                    console.log(this.img);
+                    const c = this.img.getColor(x, y);
                     const b = 1 - brightness(c) / 100.0;
                     const v = createVector(i, j);
                     target.add(v.normalize().copy().mult(b).div(v.mag()));
@@ -142,11 +147,11 @@ class Particle {
             this.pos.x = random(1) * width;
             this.pos.y = random(1) * height;
 			console.log(this.img)
-            const b = brightness(this.img.fget(floor(this.pos.x), floor(this.pos.y)));
+            const b = brightness(this.img.getColor(floor(this.pos.x), floor(this.pos.y)));
             if (b < 35)
                 hasFound = true;
         }
-        this.drawColor = this.img.fget(floor(this.pos.x), floor(this.pos.y));
+        this.drawColor = this.img.getColor(floor(this.pos.x), floor(this.pos.y));
         this.drawColor.setAlpha(this.drawAlpha);
         this.ppos = this.pos.copy();
         this.vel.mult(0);
