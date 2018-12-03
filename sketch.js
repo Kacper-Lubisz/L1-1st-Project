@@ -1,83 +1,86 @@
 "use strict";
 
-const images = [];
-let imgIndex = -1;
-let img;
-let paint = [];
-const particleCount = 50;
-let stepsPerFrame = 15;
-let z = 0;
-let isStop = false;
+let images = ["test1.png", "test2.png", "test3.png"]
+let components = [];
+let canvas;
+let subCanvases = {}
 
 function preload() {
-    images[0] = loadImage("test1.png");
-    images[1] = loadImage("test2.png");
-    images[2] = loadImage("test3.png");
+	images = images.map(function(name){  
+		return loadImage(name);
+	})	
 }
 
 function setup() {
-    const size = max(min(windowWidth, windowHeight), 600);
-    createCanvas(size, size);
-
-    img = createImage(width, height);
-    nextImage();
-    for (let i = 0; i < particleCount; i++) {
-        paint.push(new Particle());
-    }
-
-    background(255, 255, 255);
-    colorMode(RGB, 255, 255, 255, 255);
+	
+	// add pixel set and get extension methods to the image prototype
+	p5.Image.prototype.fget = function(x, y) {
+		const index = (y * this.width + x) * 4;
+		
+		console.log(this.pixels.slice(index, index + 4))
+		
+		return color(this.pixels.slice(index, index + 4));
+	}
+	p5.Image.prototype.fset = function(x, j, c) {
+		const index = (y * this.width + x) * 4;
+		for (let i = 0; i < 4; i++) {
+			this.pixels[index + i] = c.levels[i];
+		}
+	}
+	
+	const size = max(min(windowWidth, windowHeight), 600);
+	canvas = createCanvas(size, size);
+		
+	components[0] = new Sketcher(new Bounds(0, 0, size / 2, size / 2), images)
+	components[1] = new Sketcher(new Bounds(size / 2, 0, size / 2, size / 2), images)
+	components[2] = new Sketcher(new Bounds(0, size / 2, size / 2, size / 2), images)
+	components[3] = new Sketcher(new Bounds(size / 2, size / 2, size / 2, size / 2), images)
+		
+	background(255, 255, 255);
+	colorMode(RGB, 255, 255, 255, 255);
 }
 
 function draw() {
-    //console.log(frameRate());
-    if (!isStop) {
-        for (let i = 0; i < particleCount; i++) {
-            for (let j = 0; j < stepsPerFrame; j++) {
-                paint[i].update();
-                paint[i].show();
-            }
-        }
-        z += 0.01;
-    }
-    //background(255);
-    //image(img, 0, 0, width, height);
-}
-
-function fget(i, j) {
-    const index = (j * img.width + i) * 4;
-    return color(img.pixels[index], img.pixels[index + 1], img.pixels[index + 2], img.pixels[index + 3]);
-}
-
-function fset(i, j, c) {
-    const index = (j * img.width + i) * 4;
-    img.pixels[index] = red(c);
-    img.pixels[index + 1] = green(c);
-    img.pixels[index + 2] = blue(c);
-    img.pixels[index + 3] = alpha(c);
+	components.forEach(function(comp) {
+		// create the canvas that each component is going to draw on
+		// this means that each component is isolated from all others
+		// a new canvas is not created of one already exists
+		
+		canvas = subCanvases[comp] || createGraphics(comp.bounds.width, comp.bounds.width);
+		subCanvases[comp] = canvas
+		
+		comp.draw(canvas)
+		image(canvas, comp.bounds.x, comp.bounds.y); // temporary canvas to main canvas
+		
+	});
 }
 
 function keyPressed() {
-    console.log(key);
-    if (key === 's' || key === 'S') {
-        isStop = !isStop;
-    }
+	console.log(key);
+	if (key === 's' || key === 'S') {
+		isStop = !isStop;
+	}
+}
+
+function nextImage(){
+	components.forEach(function(comp){
+		comp.nextImage()
+	})
 }
 
 function mouseClicked() {
-    nextImage();
+	nextImage();
 }
 
 function touchStarted() {
-    nextImage();
+	nextImage();
 }
 
-function nextImage() {
-    if (!img) return;
-    imgIndex = (imgIndex + 1) % images.length;
-    let targetImg = images[imgIndex];
-    img.copy(targetImg, 0, 0, targetImg.width, targetImg.height, 0, 0, img.width, img.height);
-    //img.resize(width, height);
-    img.loadPixels();
-    clear();
+class Bounds {
+	constructor(x, y, width, height){
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+	}
 }

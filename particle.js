@@ -1,7 +1,9 @@
 "use strict";
 
 class Particle {
-    constructor() {
+    constructor(img) {
+		
+		this.img = img
 
         this.ppos = createVector(0, 0);
         this.pos = createVector(0, 0);
@@ -24,8 +26,6 @@ class Particle {
         this.count = 0;
         this.maxCount = 100;
 
-        this.reset();
-
     }
 
     /* Fade the pixels of the line */
@@ -38,31 +38,31 @@ class Particle {
         for (let i = 0; i < step; i++) {
             const x = floor(x1 + (x2 - x1) * i / step);
             const y = floor(y1 + (y2 - y1) * i / step);
-            const originColor = fget(x, y);
+            const originColor = this.img.fget(x, y);
 
             originColor.setRed(min(red(originColor) + 50, 255));
             originColor.setGreen(min(green(originColor) + 50, 255));
             originColor.setBlue(min(blue(originColor) + 50, 255));
 
-            fset(x, y, originColor);
+            this.img.fset(x, y, originColor);
 
         }
     }
 
-    show() {
+    show(canvas) {
         this.count++;
         if (this.count > this.maxCount)
             this.reset();
-        stroke(this.drawColor);
-        strokeWeight(this.drawWeight);
+        canvas.stroke(this.drawColor);
+        canvas.strokeWeight(this.drawWeight);
         if (this.force.mag() > 0.1 && random(1) < this.dropRate) {
             this.drawColor.setAlpha(this.dropAlpha);
-            stroke(this.drawColor);
+            canvas.stroke(this.drawColor);
             let boldWeight = this.drawWeight + random(5);
-            strokeWeight(boldWeight);
+            canvas.strokeWeight(boldWeight);
             this.drawColor.setAlpha(this.drawAlpha);
         }
-        line(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
+        canvas.line(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
 
         this.fadeLineFromImg(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
     }
@@ -81,7 +81,7 @@ class Particle {
                 const x = floor(this.pos.x + i);
                 const y = floor(this.pos.y + j);
                 if (x <= img.width - 1 && x >= 0 && y < img.height - 1 && y >= 0) {
-                    const c = fget(x, y);
+                    const c = this.img.fget(x, y);
                     const b = 1 - brightness(c) / 100.0;
                     const v = createVector(i, j);
                     target.add(v.normalize().copy().mult(b).div(v.mag()));
@@ -132,8 +132,8 @@ class Particle {
     }
 
     reset() {
-        img.updatePixels();
-        img.loadPixels();
+        this.img.updatePixels();
+        this.img.loadPixels();
 
         this.count = 0;
         //maxCount = 200;
@@ -141,11 +141,12 @@ class Particle {
         while (!hasFound) {
             this.pos.x = random(1) * width;
             this.pos.y = random(1) * height;
-            const b = brightness(fget(floor(this.pos.x), floor(this.pos.y)));
+			console.log(this.img)
+            const b = brightness(this.img.fget(floor(this.pos.x), floor(this.pos.y)));
             if (b < 35)
                 hasFound = true;
         }
-        this.drawColor = fget(floor(this.pos.x), floor(this.pos.y));
+        this.drawColor = this.img.fget(floor(this.pos.x), floor(this.pos.y));
         this.drawColor.setAlpha(this.drawAlpha);
         this.ppos = this.pos.copy();
         this.vel.mult(0);
