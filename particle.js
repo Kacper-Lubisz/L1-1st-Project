@@ -1,9 +1,47 @@
 "use strict";
 
+const WRAPPING_MODES = ["wrap_zeros", "wrap_around", "wrap_stretch"]
+
+class Convolution {
+	/**
+	* Creates a colvolution kernel that can be used to calculate the forces on the particle
+	* A standard kernel is 4 dimentional: width * height * color_depth * force
+	* - width and height are the only two required dimentions
+	* - color_depth can be either 1, 3 or 4
+	* - force can either be a 1d scalar (by default pointing to the centre of the kernel) or a force vector
+	*
+	* @param {tensor} kenrel The kernel that will make up the approximated colvolution
+	* @param {string} wrappingMode Details what should happen when the kernel is being applied over the edge of an image
+	*/
+	constructor(kernel, wrappingMode){
+		this.kernel = kernel
+		
+		// validate wrapping mode
+		if (!wrappingMode || WRAPPING_MODES.indexOf(wrappingMode) > -1){
+			this.wrappingMode = wrappingMode || WRAP_ZEROS
+		} else {
+			throw "Invalid Wrapping Mode"
+		}
+
+		// pre-process and validate kernel
+		const kernel_shape = []
+		let current = kernel
+		while (current[0]){
+			kernel_shape.push(current.length)
+			current = current[0]
+		}
+		// this loop finds the dimentions of the input kernel
+		// if it was input a 4x5 matrix, shape = [4,5]
+		// if it was input a 5x5x3x2 tensor, shape = [5, 5, 3, 2]
+
+	}
+}
+
 class Particle {
-    constructor(img) {
+    constructor(img, convolution) {
 		
 		this.img = img;
+		this.convolution = convolution
 
         this.ppos = createVector(0, 0);
         this.pos = createVector(0, 0);
