@@ -24,16 +24,16 @@ class Convolution {
 		}
 
 		// pre-process and validate kernel
-		const kernel_shape = []
+		const kernelShape = []
 		let current = kernel
-		while (current[0]){
+		while (current[0].length){
 			kernel_shape.push(current.length)
 			current = current[0]
 		}
 		// this loop finds the dimentions of the input kernel
 		// if it was input a 4x5 matrix, shape = [4,5]
 		// if it was input a 5x5x3x2 tensor, shape = [5, 5, 3, 2]
-
+		console.log(kernelShap)
 	}
 }
 
