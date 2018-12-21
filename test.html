@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Examples</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
+
+
+    <link href="prism.css" rel="stylesheet"/>
+    <script src="prism.js"></script>
+
+    <script>
+
+        class p5Component {
+            get seed() {
+                const component = this;
+                const originalProto = this.__proto__;
+                return function (sketch) {
+                    component.initPrototype(sketch);
+                    sketch.setup = function () {
+                        originalProto.setup.call(component);
+                    };
+                    sketch.draw = function () {
+                        originalProto.draw.call(component, sketch);
+                    };
+
+                }
+            }
+
+            initPrototype(sketch) {
+                const previousProto = this.__proto__;
+                this.__proto__ = sketch;
+
+                if (!("addedClasses" in sketch)) {
+                    sketch.addedClasses = []; // in this list stores the classes that have been added
+                    sketch.keyOrigins = {}; // this keeps track of which class each added key came from
+                }
+
+                let currentClassName = previousProto.constructor.name;
+                if (!sketch.addedClasses.includes(currentClassName)) {
+                    // if this super class hasn't had it's methods added yet
+
+                    sketch.addedClasses.push(currentClassName);
+
+                    const ignoreKeys = ["constructor", "setup", "draw", "addedClasses", "keyOrigins"];
+                    Object.getOwnPropertyNames(previousProto).forEach(key => {
+                        if (!ignoreKeys.includes(key)) {
+                            if (key in sketch) {
+                                // try to determine the source of this key
+                                let keyUser;
+                                if (key in sketch.keyOrigins) {
+                                    keyUser = "the class " + sketch.keyOrigins[key];
+                                } else {
+                                    keyUser = "p5 (sketch)";
+                                }
+                                throw "The use of the key, " + key + ", in the implementation of custom components is forbidden, this key is used by " + keyUser;
+                            } else {
+                                sketch[key] = previousProto[key];
+                                sketch.keyOrigins[key] = currentClassName;
+                            }
+                        }
+                    });
+
+                }
+            }
+
+        }
+
+        class ExampleComponent extends p5Component {
+            constructor(dimentions = {width: 200, height: 200}) {
+                super();
+                this.dimentions = dimentions;
+            }
+
+            setup() {
+                this.createCanvas(this.dimentions.width, this.dimentions.height)
+            }
+
+            draw(canvas) {
+                canvas.clear();
+                const position = this.calculatePosition();
+                canvas.rect(position.x, position.y, 50, 50);
+            }
+
+            calculatePosition() {
+                return {
+                    x: 75 + 50 * Math.sin(this.millis() / 1000),
+                    y: 75 + 50 * Math.cos(this.millis() / 1000)
+                }
+            }
+        }
+
+        class NestedExample extends p5Component {
+            constructor() {
+                super();
+                this.children = [];
+                this.isSetup = false;
+            }
+
+            addChild(child) {
+                if (this.isSetup) {
+                    throw "Children can only be added before the component is setup"
+                } else {
+
+                    child.initPrototype(this.__proto__);
+                    this.children.push(child);
+                    child.pos = {
+                        x: 200 * this.children.length,
+                        y: 0
+                    }
+                }
+            }
+
+            setup() {
+                console.log(this);
+                this.children.forEach((child) => child.setup());
+                for (let i = 0; i < this.children.length; i++) {
+                    this.children[i].pos = {
+                        x: 200 * i,
+                        y: 0
+                    }
+                }
+                this.isSetup = true;
+            }
+
+            draw(canvas) {
+                this.children.forEach((child) => {
+                    canvas.push();
+                    canvas.translate(child.pos.x, child.pos.y);
+                    child.draw(canvas);
+                    canvas.pop();
+                });
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const nested = new NestedExample();
+
+            nested.addChild(new ExampleComponent({width: 200, height: 200}));
+            nested.addChild(new ExampleComponent({width: 200, height: 200}));
+
+            new p5(nested.seed, document.getElementById("example"))
+
+        });
+    </script>
+
+</head>
+<body>
+<div class="container">
+    Title
+    <div id="example"></div>
+    Explanation <br>
+    <pre><code class="language-js">Some words()</code></pre>
+</div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Examples</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
+
+
+    <link href="prism.css" rel="stylesheet"/>
+    <script src="prism.js"></script>
+
+    <script>
+
+        class p5Component {
+            get seed() {
+                const component = this;
+                const originalProto = this.__proto__;
+                return function (sketch) {
+                    component.initPrototype(sketch);
+                    sketch.setup = function () {
+                        originalProto.setup.call(component);
+                    };
+                    sketch.draw = function () {
+                        originalProto.draw.call(component, sketch);
+                    };
+
+                }
+            }
+
+            initPrototype(sketch) {
+                console.log("pre");
+                console.log(this);
+                console.log("start");
+                let lastPrototype = this; // this clones its way down to the end of the prototype chain
+                while (lastPrototype.__proto__ !== Object.prototype) {
+                    // lastPrototype.__proto__ = Object.assign({}, lastPrototype.__proto__);
+                    console.log(lastPrototype);
+                    lastPrototype = lastPrototype.__proto__;
+                }
+                lastPrototype.__proto__ = sketch;
+                console.log("end");
+            }
+
+        }
+
+        class ExampleComponent extends p5Component {
+            constructor(dimentions = {width: 200, height: 200}) {
+                super();
+                this.dimentions = dimentions;
+            }
+
+            setup() {
+                this.createCanvas(this.dimentions.width, this.dimentions.height)
+            }
+
+            draw(canvas) {
+                canvas.clear();
+                const position = this.calculatePosition();
+                canvas.rect(position.x, position.y, 50, 50);
+            }
+
+            calculatePosition() {
+                return {
+                    x: 75 + 50 * Math.sin(this.millis() / 1000),
+                    y: 75 + 50 * Math.cos(this.millis() / 1000)
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+
+            let exampleComponent = new ExampleComponent({width: 200, height: 200});
+            console.log(exampleComponent);
+            new p5(exampleComponent.seed, document.getElementById("example1"));
+            // new p5(new ExampleComponent({width: 200, height: 200}).seed, document.getElementById("example2"));
+
+        });
+    </script>
+
+</head>
+<body>
+<div class="container">
+    Title
+    <div id="example1"></div>
+    <div id="example2"></div>
+    Explanation <br>
+    <pre><code class="language-js">Some words()</code></pre>
+</div>
+</body>
+</html>
