@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
 
 
-    <link href="prism.css" rel="stylesheet"/>
-    <script src="prism.js"></script>
+    <link href="../prism.css" rel="stylesheet"/>
+    <script src="../prism.js"></script>
 
     <script>
 
@@ -115,7 +115,7 @@
             }
 
             setup() {
-                console.log(this);
+                console.log("setup", this);
                 this.children.forEach((child) => child.setup());
                 for (let i = 0; i < this.children.length; i++) {
                     this.children[i].pos = {
@@ -150,10 +150,7 @@
 </head>
 <body>
 <div class="container">
-    Title
     <div id="example"></div>
-    Explanation <br>
-    <pre><code class="language-js">Some words()</code></pre>
 </div>
 </body>
 </html>

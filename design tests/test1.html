@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Examples</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
+
+
+    <link href="../prism.css" rel="stylesheet"/>
+    <script src="../prism.js"></script>
+
+    <script>
+
+        class p5Component {
+            get seed() {
+                const component = this;
+                // to remove the ambiguity from what 'this' is referring to
+                const originalProto = this.__proto__;
+
+                return function (sketch) {
+                    component.__proto__ = sketch;
+                    const ignoreKeys = ["constructor", "setup", "draw"];
+
+                    Object.getOwnPropertyNames(originalProto).forEach(key => {
+                        if (!ignoreKeys.includes(key)) {
+                            if (key in sketch) {
+                                throw "The use of the key, " + key +
+                                ", in the implementation of custom components is forbidden";
+                            } else {
+                                sketch[key] = originalProto[key]
+                            }
+                        }
+                    });
+                    sketch.setup = function () {
+                        originalProto.setup.call(component);
+                    };
+                    sketch.draw = function () {
+                        originalProto.draw.call(component);
+                    };
+                }
+            }
+        }
+
+        class ExampleComponent extends p5Component {
+            constructor(dimensions = {width: 200, height: 200}) {
+                super();
+                this.dimensions = dimensions;
+            }
+
+            setup() {
+                this.canvas = this.createCanvas(this.dimensions.width, this.dimensions.height)
+            }
+
+            draw() {
+                this.clear();
+                const position = this.calculatePosition();
+                this.rect(position.x, position.y, 50, 50);
+            }
+
+            calculatePosition() {
+                return {
+                    x: 75 + 50 * Math.sin(this.millis() / 1000),
+                    y: 75 + 50 * Math.cos(this.millis() / 1000)
+                }
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const sketcher = new ExampleComponent();
+            new p5(sketcher.seed, document.getElementById("example1"));
+
+            new p5(new ExampleComponent().seed, document.getElementById("example2"));
+            // it works with two separate instances of the same component!
+        });
+
+    </script>
+
+</head>
+<body>
+<div class="container">
+    <div id="example1"></div>
+    <div id="example2"></div>
+</div>
+</body>
+</html>

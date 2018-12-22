@@ -9,8 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
 
 
-    <link href="prism.css" rel="stylesheet"/>
-    <script src="prism.js"></script>
+    <link href="../prism.css" rel="stylesheet"/>
+    <script src="../prism.js"></script>
 
     <script>
 
@@ -31,17 +31,27 @@
             }
 
             initPrototype(sketch) {
-                console.log("pre");
-                console.log(this);
-                console.log("start");
-                let lastPrototype = this; // this clones its way down to the end of the prototype chain
+                this.__proto__ = p5Component.deepClone(this.__proto__);
+                // deep clone the prototype, this is so that the other instances
+                // are not affected by adding the sketch to the chain
+
+                let lastPrototype = this; // add sketch to the end of the prototype chain.
                 while (lastPrototype.__proto__ !== Object.prototype) {
-                    // lastPrototype.__proto__ = Object.assign({}, lastPrototype.__proto__);
-                    console.log(lastPrototype);
                     lastPrototype = lastPrototype.__proto__;
                 }
                 lastPrototype.__proto__ = sketch;
-                console.log("end");
+            }
+
+            static deepClone(obj) {
+                const clone = {};
+                Object.getOwnPropertyNames(obj).forEach(key => {
+                    if (typeof obj[key] == "object" && obj[key] != null) {
+                        clone[key] = this.deepClone(obj[key])
+                    } else {
+                        clone[key] = obj[key]
+                    }
+                });
+                return clone;
             }
 
         }
@@ -73,9 +83,9 @@
         document.addEventListener("DOMContentLoaded", function () {
 
             let exampleComponent = new ExampleComponent({width: 200, height: 200});
-            console.log(exampleComponent);
+
             new p5(exampleComponent.seed, document.getElementById("example1"));
-            // new p5(new ExampleComponent({width: 200, height: 200}).seed, document.getElementById("example2"));
+            new p5(new ExampleComponent({width: 200, height: 200}).seed, document.getElementById("example2"));
 
         });
     </script>
