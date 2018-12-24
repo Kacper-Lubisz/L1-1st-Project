@@ -20,24 +20,13 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            let images = [
-                "images/test1.png",
-                "images/test2.png",
-                "images/test3.png",
-                "images/test4.png",
-                "images/test5.png",
-                "images/test6.png"
-            ];
-
-            new p5(new ImageSketcher(images[5], 500, 500).seed, document.getElementById("sketch"))
-
+            new p5(new ImageSketcher("images/test6.png", 700, 700).seed, document.getElementById("sketch"))
         });
     </script>
 
 </head>
 <body>
 <div class="container">
-    <
     <div id="sketch"></div>
 </div>
 </body>

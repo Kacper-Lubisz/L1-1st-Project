@@ -6,11 +6,14 @@ class Particle {
 
         this.sketcher = sketcher;
         this.img = sketcher.image;
+        this.p5 = sketcher.__proto__;
+        // this is where all the p5 utilities are
+        // this.p5. is much shorter than this.sketcher.
 
-        this.ppos = this.sketcher.createVector(0, 0);
-        this.pos = this.sketcher.createVector(0, 0);
-        this.vel = this.sketcher.createVector(0, 0);
-        this.force = this.sketcher.createVector(0, 0);
+        this.ppos = this.p5.createVector(0, 0);
+        this.pos = this.p5.createVector(0, 0);
+        this.vel = this.p5.createVector(0, 0);
+        this.force = this.p5.createVector(0, 0);
 
         this.maxSpeed = 3.0;
         this.perception = 5;
@@ -23,10 +26,10 @@ class Particle {
         this.dropRange = 40;
         this.dropAlpha = 150;
         this.drawAlpha = 50;
-        this.drawColor = this.sketcher.color(0, 0, 0, this.drawAlpha);
+        this.drawColor = this.p5.color(0, 0, 0, this.drawAlpha);
         this.drawWeight = 1;
         this.count = 0;
-        this.maxCount = this.sketcher.floor(100 * this.sketcher.random(.75, 1.25));
+        this.maxCount = this.p5.floor(100 * this.p5.random(.75, 1.25));
 
         // this.onOutOfBounds = this.reset;
         this.onOutOfBounds = function () {
@@ -41,25 +44,25 @@ class Particle {
     fadeLineFromImg(x1, y1, x2, y2, fadeFunction) {
 
         if (fadeFunction === undefined) {
-            const particle = this; // remove this name ambiguity
+            const p5 = this.p5; // remove this name ambiguity
             fadeFunction = function (originColor) {
-                return particle.sketcher.color(
-                    particle.sketcher.min(particle.sketcher.red(originColor) + 50, 255),
-                    particle.sketcher. min(particle.sketcher.green(originColor) + 50, 255),
-                    particle.sketcher.min(particle.sketcher.blue(originColor) + 50, 255)
+                return p5.color(
+                    min(p5.red(originColor) + 50, 255),
+                    min(p5.green(originColor) + 50, 255),
+                    min(p5.blue(originColor) + 50, 255)
                 );
             }
         } else if (typeof (fadeFunction) !== "function") {
             throw "Invalid argument, fadeFunction must be a function"
         }
 
-        const xOffset = this.sketcher.floor(this.sketcher.abs(x1 - x2));
-        const yOffset = this.sketcher.floor(this.sketcher.abs(y1 - y2));
-        const step = this.sketcher.max(yOffset, xOffset);
+        const xOffset = Math.floor(Math.abs(x1 - x2));
+        const yOffset = Math.floor(Math.abs(y1 - y2));
+        const step = Math.max(yOffset, xOffset);
 
         for (let i = 0; i < step; i++) {
-            const x = this.sketcher.floor(x1 + (x2 - x1) * i / step);
-            const y = this.sketcher.floor(y1 + (y2 - y1) * i / step);
+            const x = Math.floor(x1 + (x2 - x1) * i / step);
+            const y = Math.floor(y1 + (y2 - y1) * i / step);
             if (x < 0 || x >= this.sketcher.width || y < 0 || y >= this.sketcher.height) {
                 continue
             }
@@ -77,10 +80,10 @@ class Particle {
         canvas.stroke(this.drawColor);
         canvas.strokeWeight(this.drawWeight);
 
-        if (this.force.mag() > 0.1 && this.sketcher.random(1) < this.dropRate) {
+        if (this.force.mag() > 0.1 && random(1) < this.dropRate) {
             this.drawColor.setAlpha(this.dropAlpha);
             canvas.stroke(this.drawColor);
-            let boldWeight = this.drawWeight + this.sketcher.random(5);
+            let boldWeight = this.drawWeight + random(5);
             canvas.strokeWeight(boldWeight);
             this.drawColor.setAlpha(this.drawAlpha);
         }
@@ -91,24 +94,25 @@ class Particle {
     }
 
     update() {
+
         this.ppos = this.pos.copy();
         this.force.mult(0);
 
         // Add pixels force
-        let target = this.sketcher.createVector(0, 0);
+        let target = this.p5.createVector(0, 0);
         let count = 0;
 
         // this is a convolution kernel
-        for (let i = -this.sketcher.floor(this.perception / 2); i < this.perception / 2; i++) {
-            for (let j = -this.sketcher.floor(this.perception / 2); j < this.perception / 2; j++) {
+        for (let i = -Math.floor(this.perception / 2); i < this.perception / 2; i++) {
+            for (let j = -Math.floor(this.perception / 2); j < this.perception / 2; j++) {
                 if (i === 0 && j === 0)
                     continue;
-                const x = this.sketcher.floor(this.pos.x + i);
-                const y = this.sketcher.floor(this.pos.y + j);
+                const x = Math.floor(this.pos.x + i);
+                const y = Math.floor(this.pos.y + j);
                 if (x <= this.img.width - 1 && x >= 0 && y < this.img.height - 1 && y >= 0) {
-                    const c = this.sketcher.color(this.img.getColor(x, y));
-                    const b = 1 - this.sketcher.brightness(c) / 100.0;
-                    const v = this.sketcher.createVector(i, j);
+                    const c = this.p5.color(this.img.getColor(x, y));
+                    const b = 1 - this.p5.brightness(c) / 100.0;
+                    const v = createVector(i, j);
                     target.add(v.normalize().copy().mult(b));
                     count++;
                 }
@@ -119,7 +123,7 @@ class Particle {
         }
 
         // Add noise force
-        const n = this.sketcher.noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, this.sketcher.noiseTimeOffset + this.sketcher.millis() / 100) * this.sketcher.TWO_PI * 10;
+        const n = this.p5.noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, this.sketcher.noiseTimeOffset + this.p5.millis() / 100) * TWO_PI * 10;
         const v = p5.Vector.fromAngle(n);
         if (this.force.mag() < 0.01) // this can be replaced with an activation and a blending
             this.force.add(v.mult(this.noiseInfluence * 5));
@@ -127,7 +131,7 @@ class Particle {
             this.force.add(v.mult(this.noiseInfluence));
 
         // Add bound force
-        const boundForce = this.sketcher.createVector(0, 0); // all of bounding should be done by one handler
+        const boundForce = createVector(0, 0); // all of bounding should be done by one handler
         if (this.pos.x < this.bound) {
             boundForce.x = (this.bound - this.pos.x) / this.bound;
         }
@@ -163,13 +167,13 @@ class Particle {
         this.count = 0;
         let hasFound = false;
         while (!hasFound) {
-            this.pos.x = this.sketcher.random(1) * this.sketcher.width;
-            this.pos.y = this.sketcher.random(1) * this.sketcher.height;
-            const b = this.sketcher.brightness(this.sketcher.color(this.img.getColor(this.sketcher.floor(this.pos.x), this.sketcher.floor(this.pos.y))));
+            this.pos.x = random(1) * this.sketcher.width;
+            this.pos.y = random(1) * this.sketcher.height;
+            const b = this.p5.brightness(this.p5.color(this.img.getColor(Math.floor(this.pos.x), Math.floor(this.pos.y))));
             if (b < 35)
                 hasFound = true;
         }
-        this.drawColor = this.sketcher.color(this.img.getColor(this.sketcher.floor(this.pos.x), this.sketcher.floor(this.pos.y)));
+        this.drawColor = this.p5.color(this.img.getColor(Math.floor(this.pos.x), Math.floor(this.pos.y)));
         this.drawColor.setAlpha(this.drawAlpha);
         this.ppos = this.pos.copy();
         this.vel.mult(0);

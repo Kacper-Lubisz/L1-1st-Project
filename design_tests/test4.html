@@ -49,7 +49,7 @@
                 lastPrototype.__proto__ = sketch;
             }
 
-            parentSetup(child) {
+            setupChild(child) {
                 if (child.isSetup) {
                     return
                 }
@@ -131,7 +131,7 @@
                     this.createCanvas(numberOfTiles * 200, numberOfTiles * 200);
                 }
                 for (let i = 0; i < this.children.length; i++) {
-                    super.parentSetup(this.children[i]);
+                    super.setupChild(this.children[i]);
                     this.children[i].position = {x: (i % 2) * 200, y: Math.floor(i / 2) * 200}
                 }
 
@@ -164,7 +164,7 @@
                 if (parent === undefined) {
                     this.createCanvas(400, 400, this.WEBGL)
                 }
-                super.parentSetup(this.child);
+                super.setupChild(this.child);
 
                 this.childImage = this.createGraphics(400, 400);
 

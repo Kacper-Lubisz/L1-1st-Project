@@ -50,7 +50,7 @@ To summarise, a good model should:
 
 Ideally, you should be able to instantiate a p5 sketch solely containing the reusable component.  The best conceivable 
 implementation of this that matches the marking criteria of using ECMA 6 classes is to make components inherit from p5. 
-This is in fact problematic because p5 isn't an ESMA 6 class. 
+This is in fact problematic not because p5 isn't an ESMA 6 class. 
 
 For clarity, I am describing the issues with this example,
 ```javascript
@@ -77,16 +77,27 @@ var userDraw = context.draw;
     userDraw();
 // ...
 ```
-This means that a simple inheritance from p5 is impossible. Any model will somehow need to implement a work around to 
-this issue, which will sacrifice either code cleanliness or it's conciseness.
 
-The obvious next step is to find the best compromise. My opinion being that I should prioritise making any work around 
-code (particularly the code for interfacing with p5) modular and forward compatible with ES6 classes.  The goal being 
-to have the interface between the `p5Component` class contain any unclean code, such that the implementation of my 
-particular sketch and it's usage to only uses good practices. 
+We can fix this by binding `draw`, `setup` and `preload`(the methods that can be overridden) in the constructor as such,
+```javascript
+this.draw = this.draw.bind(this);
+this.setup = this.setup.bind(this);
+this.preload = this.preload.bind(this);
+```
+
+The main issue with inheriting from p5 is that you lose control over the calls to setup and draw, which is needed for 
+nested components. The main issue being that p5 will by default create a canvas if one isn't created by the component.
+Of course all of this can be worked around, leaving the question of whether the work around will result in nicer code
+than a different work around which doesn't inherit from p5.
+
+Since any model will somehow need to implement a work around to this issue, which will sacrifice either code cleanliness
+or it's conciseness.  The obvious next step is to find the best compromise. My opinion being that I should prioritise
+making any work around code (particularly the code for interfacing with p5) modular and forward compatible with ES6 
+classes.  The goal being to have the interface between the `p5Component` class contain any unclean code, such that the 
+implementation of my particular sketch and it's usage to only uses good practices. 
 
 A possible solution to this would be a `p5Component` class which has a method which creates a seed(refer to the example 
-of instance mode) or to make a static function which creates a seed from any component.  
+of instance mode) or to make a static function which creates a seed from any component.
 ```javascript
 class p5Component {
     get seed(){
@@ -209,7 +220,8 @@ class Widget {
 In other languages with richer OOP features I would have `setup` and `draw` (and the other methods such as `preload`) as
 abstract methods.  Another feature which makes developing a safe and developer friendly interface is tight control over 
 visibility (which doesn't exist in js), such as package or module only visibility. In combination with features such as 
-final methods would allow me to write a `p5Component` class that is truly fail safe.  
+final methods would allow me to write a `p5Component` class that is truly fail safe.  I could implement abstract methods
+by introducing a similar check to the one in the example above.
 
 For example, `setup` could have a final and hidden overload which is only called by the p5 class, a private `isSetup` 
 field could be used to disallowing multiple calls the user defined setup from the p5 class.  This would make it safe to 
@@ -219,4 +231,26 @@ class.
 ### Making a model for `p5Component`
 
 We already have a solution for instantiating a component to a sketch, now we must consider what a good model which 
-allows for easy nesting of components looks like.
+allows for easy nesting of components looks like.  I think that writing a specification would result in an unnecessarily
+complex model, so instead I will implement a nested component to see what needs to be added to the model.  This 
+implementation can be found at `design_tests/test4.html`.
+
+There is still one big issue that needs to be resolved.  The problem is that the only way to access all the p5 utility
+methods, such as `createVector()`, is through the sketch.  This isn't an issue for the object of the component, but if 
+any other class is used, it will not have access to those methods.
+
+The solution to this is to make those functions and fields global. All of these functions and constants can be found in 
+the prototype of the sketch object. Otherwise the only way to do it is to pass the sketch object to all the classes used 
+or to make all those classes inherit from the sketches prototype. All of these solutions being undesirable.
+
+Let's consider how p5 deals with this. It makes all those functions global if an instance of a sketch isn't made and 
+setup and draw functions can be found.  The p5 function which does this called `_globalInit` can be found on line 48405.
+If you follow this code you can find where (on line 48970) p5 loops through all the keys of the p5 prototype and the 
+global sketch object and makes them global.  It uses a private function called `_createFriendlyGlobalFunctionBinder`.
+
+This is dangerous because it makes functions which are instance specific visible globally.  The original p5 code binds 
+the global instance to the functions, which would be dangerous and allow any code to call methods on the instance.
+Since I can't go through all 431 keys in the p5 prototype, I can instead just unbind the object.  The dangerous 
+functions will still be public, but now instead they will just error out (arguably a lesser of two evils).  This solution
+is still very imperfect. To demonstrate a common problem, let's consider the `color` function.  It always errors out 
+because it tries to access a color mode variable which is sketch specific.

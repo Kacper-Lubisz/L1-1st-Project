@@ -35,10 +35,7 @@ class ImageSketcher extends p5Component {
         this.isPreloaded = true;
     }
 
-    setup() {
-        if (this.isSetup) {
-            return
-        }
+    setup(parent) {
 
         if (this.width === undefined && this.height === undefined) { // nothing give, taken from image
             this.width = this.image.width;
@@ -49,8 +46,9 @@ class ImageSketcher extends p5Component {
             this.height = image.height / image.width * this.width;
         } // else values are already good
 
-        this.createCanvas(this.width, this.height);
-
+        if (parent === undefined) {
+            this.createCanvas(this.width, this.height);
+        }
         this.setImage(this.image);
 
         this.noiseTimeOffset = this.random(0, 10);
@@ -62,7 +60,6 @@ class ImageSketcher extends p5Component {
         this.background(255, 255, 255);
         this.colorMode(this.RGB, 255);
 
-        this.isSetup = true;
     }
 
     draw(canvas) {
@@ -90,8 +87,7 @@ class ImageSketcher extends p5Component {
     }
 
     setImage(newImage) {
-        console.log(this.image);
-        console.log(newImage);
+
         this.image = this.createImage(this.floor(this.width), this.floor(this.height));
         this.image.copy(newImage, 0, 0, newImage.width, newImage.height, 0, 0, this.image.width, this.image.height);
         this.image.loadPixels();
