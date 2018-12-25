@@ -3,7 +3,7 @@
 p5.Image.prototype.getColor = function (x, y) {
     console.log(x, y);
     const index = (y * this.width + x) * 4;
-    return color(this.pixels.slice(index, index + 4));
+    return color(this.pixels[index], this.pixels[index + 1], this.pixels[index + 2], this.pixels[index + 3]);
 };
 p5.Image.prototype.setColor = function (x, y, color) {
     const index = (y * this.width + x) * 4;
@@ -46,7 +46,7 @@ function draw() {
 
         canvas = subCanvases[comp] || createGraphics(comp.bounds.width, comp.bounds.width);
         subCanvases[comp] = canvas;
-
+		
         comp.draw(canvas);
         image(canvas, comp.bounds.x, comp.bounds.y); // temporary canvas to main canvas
 

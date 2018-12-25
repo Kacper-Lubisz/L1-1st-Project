@@ -1,42 +1,5 @@
 "use strict";
 
-const WRAPPING_MODES = ["wrap_zeros", "wrap_around", "wrap_stretch"]
-
-class Convolution {
-	/**
-	* Creates a colvolution kernel that can be used to calculate the forces on the particle
-	* A standard kernel is 4 dimentional: width * height * color_depth * force
-	* - width and height are the only two required dimentions
-	* - color_depth can be either 1, 3 or 4
-	* - force can either be a 1d scalar (by default pointing to the centre of the kernel) or a force vector
-	*
-	* @param {tensor} kenrel The kernel that will make up the approximated colvolution
-	* @param {string} wrappingMode Details what should happen when the kernel is being applied over the edge of an image
-	*/
-	constructor(kernel, wrappingMode){
-		this.kernel = kernel
-		
-		// validate wrapping mode
-		if (!wrappingMode || WRAPPING_MODES.indexOf(wrappingMode) > -1){
-			this.wrappingMode = wrappingMode || WRAP_ZEROS
-		} else {
-			throw "Invalid Wrapping Mode"
-		}
-
-		// pre-process and validate kernel
-		const kernelShape = []
-		let current = kernel
-		while (current[0].length){
-			kernel_shape.push(current.length)
-			current = current[0]
-		}
-		// this loop finds the dimentions of the input kernel
-		// if it was input a 4x5 matrix, shape = [4,5]
-		// if it was input a 5x5x3x2 tensor, shape = [5, 5, 3, 2]
-		console.log(kernelShap)
-	}
-}
-
 class Particle {
     constructor(img, convolution) {
 		
@@ -100,8 +63,6 @@ class Particle {
             canvas.strokeWeight(boldWeight);
             this.drawColor.setAlpha(this.drawAlpha);
         }
-        console.log(this.pos);
-        console.log(this.ppos);
         canvas.line(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
 
         this.fadeLineFromImg(this.ppos.x, this.ppos.y, this.pos.x, this.pos.y);
@@ -123,11 +84,10 @@ class Particle {
                 const x = floor(this.pos.x + i);
                 const y = floor(this.pos.y + j);
                 if (x <= this.img.width - 1 && x >= 0 && y < this.img.height - 1 && y >= 0) {
-                    console.log(this.img);
                     const c = this.img.getColor(x, y);
                     const b = 1 - brightness(c) / 100.0;
                     const v = createVector(i, j);
-                    target.add(v.normalize().copy().mult(b).div(v.mag()));
+                    target.add(v.copy().mult(b).div(v.mag()**2));
                     count++;
                 }
             }
@@ -137,7 +97,7 @@ class Particle {
         }
 
         // Add noise force
-        const n = noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, z) * 5 * TWO_PI;
+        const n = noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, 0) * 5 * TWO_PI;
         const v = p5.Vector.fromAngle(n);
         if (this.force.mag() < 0.01)
             this.force.add(v.mult(this.noiseInfluence * 5));

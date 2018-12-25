@@ -25,7 +25,6 @@ class Sketcher {
 	}
 
 	draw(canvas) {
-		canvas.image(this.img, this.bounds.x, this.bounds.y, this.bounds.width, this.bounds.height);
 		if (!this.isStop) {
 			for (let i = 0; i < this.particleCount; i++) {
 				for (let j = 0; j < this.stepsPerFrame; j++) {
