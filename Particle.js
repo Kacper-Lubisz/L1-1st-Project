@@ -40,7 +40,7 @@ class Particle {
 
     }
 
-    /* Fade the pixels of the line */
+    // Fade the pixels of the line
     fadeLineFromImg(x1, y1, x2, y2, fadeFunction) {
 
         if (fadeFunction === undefined) {

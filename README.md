@@ -93,13 +93,13 @@ than a different work around which doesn't inherit from p5.
 Since any model will somehow need to implement a work around to this issue, which will sacrifice either code cleanliness
 or it's conciseness.  The obvious next step is to find the best compromise. My opinion being that I should prioritise
 making any work around code (particularly the code for interfacing with p5) modular and forward compatible with ES6 
-classes.  The goal being to have the interface between the `p5Component` class contain any unclean code, such that the 
+classes.  The goal being to have the interface between the `P5Component` class contain any unclean code, such that the 
 implementation of my particular sketch and it's usage to only uses good practices. 
 
-A possible solution to this would be a `p5Component` class which has a method which creates a seed(refer to the example 
+A possible solution to this would be a `P5Component` class which has a method which creates a seed(refer to the example 
 of instance mode) or to make a static function which creates a seed from any component.
 ```javascript
-class p5Component {
+class P5Component {
     get seed(){
         const component = this;
         const originalPrototype = this;
@@ -116,11 +116,11 @@ class p5Component {
         this.sketch.rect(20, 20, 40, 40)
     }
 }
-class CustomComponent extends p5Component {}
+class CustomComponent extends P5Component {}
 ```
 The problem with this is that is that a component can't exist on it's own without being attached to a sketch. 
 Conceivably a user could call draw before setup which is symptomatic of a badly modeled OOP design.  It would be 
-possible for the constructor of `p5Component` to hide these methods such that they throw an error before the 
+possible for the constructor of `P5Component` to hide these methods such that they throw an error before the 
 object's seed is called, though this would be a gross misuse of prototypal inheritance.  This could be resolved through
 careful visibility modifiers on overloads of visible methods, which I discuss later.
 
@@ -136,7 +136,7 @@ The first idea is to replace the prototype with the sketch. This would result in
 One solution is to hack around this by copying all keys from the `CustomComponent`'s prototype that don't conflict to 
 the sketch.  This could result in some truly awful bugs if there are any naming conflicts.  This was my first idea, and
 an implementation can be found in `/design_tests/test1.html`.  As can be seen, the implementation of `ExampleComponent` 
-and its usage looks like nice ES6 code.  The compromise being that the implementation of p5Component is very hacked 
+and its usage looks like nice ES6 code.  The compromise being that the implementation of P5Component is very hacked 
 together and quite frankly awful.
 
 This is one solution to instantiating a component straight to a sketch.  The problem is that this solution isn't very
@@ -160,7 +160,7 @@ because editing the prototype of these classes would be a bad practice to avoid 
 
 It is possible to reach a working solution with this idea and here is my preliminary implementation,
 ```javascript
-class p5Component {
+class P5Component {
     get seed() {
         const component = this;
         const originalProto = this.__proto__;
@@ -176,7 +176,7 @@ class p5Component {
     }
 
     initPrototype(sketch) {
-        this.__proto__ = p5Component.deepClone(this.__proto__);
+        this.__proto__ = P5Component.deepClone(this.__proto__);
         // deep clone the prototype, this is so that the other instances
         // are not affected by adding the sketch to the chain
 
@@ -205,7 +205,7 @@ This code is still not very nice, but is defiantly cleaner and less destructive 
 
 ### Javascript OOP features and thoughts on good abstraction
 
-A good observation is that `p5Component` ought to be an abstract class (for better abstraction, but primarily for 
+A good observation is that `P5Component` ought to be an abstract class (for better abstraction, but primarily for 
 making this code safer), which can also be hacked in ES6 as shown in the following example 
 (from https://ilikekillnerds.com/2015/06/abstract-classes-in-javascript/).
 ```javascript
@@ -220,15 +220,15 @@ class Widget {
 In other languages with richer OOP features I would have `setup` and `draw` (and the other methods such as `preload`) as
 abstract methods.  Another feature which makes developing a safe and developer friendly interface is tight control over 
 visibility (which doesn't exist in js), such as package or module only visibility. In combination with features such as 
-final methods would allow me to write a `p5Component` class that is truly fail safe.  I could implement abstract methods
+final methods would allow me to write a `P5Component` class that is truly fail safe.  I could implement abstract methods
 by introducing a similar check to the one in the example above.
 
 For example, `setup` could have a final and hidden overload which is only called by the p5 class, a private `isSetup` 
 field could be used to disallowing multiple calls the user defined setup from the p5 class.  This would make it safe to 
-make multiple sketches of the same component and hide all that complexity from the developer using the `p5Component` 
+make multiple sketches of the same component and hide all that complexity from the developer using the `P5Component` 
 class.
 
-### Making a model for `p5Component`
+### Making a model for `P5Component`
 
 We already have a solution for instantiating a component to a sketch, now we must consider what a good model which 
 allows for easy nesting of components looks like.  I think that writing a specification would result in an unnecessarily
@@ -248,7 +248,8 @@ setup and draw functions can be found.  The p5 function which does this called `
 If you follow this code you can find where (on line 48970) p5 loops through all the keys of the p5 prototype and the 
 global sketch object and makes them global.  It uses a private function called `_createFriendlyGlobalFunctionBinder`.
 
-This is dangerous because it makes functions which are instance specific visible globally.  The original p5 code binds 
+This is dangerous beca++
+use it makes functions which are instance specific visible globally.  The original p5 code binds 
 the global instance to the functions, which would be dangerous and allow any code to call methods on the instance.
 Since I can't go through all 431 keys in the p5 prototype, I can instead just unbind the object.  The dangerous 
 functions will still be public, but now instead they will just error out (arguably a lesser of two evils).  This solution

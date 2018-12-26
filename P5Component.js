@@ -1,19 +1,19 @@
 "use strict";
 
-class p5Component {
+class P5Component {
 
     constructor() {
         this.isSetup = false;
         this.isPreloaded = false;
 
         // this block emulates an abstract class
-        if (this.constructor === p5Component) {
+        if (this.constructor === P5Component) {
             throw new TypeError('Abstract class "p5Component" cannot be instantiated directly.');
         }
         const abstractMethods = [{name: "preload", args: 0}, {name: "setup", args: 1}, {name: "draw", args: 1}];
         for (let i = 0; i < abstractMethods.length; i++) {
             const method = abstractMethods[i];
-            if (this[method.name] === p5Component.prototype[method.name] || typeof this[method.name] !== "function") {
+            if (this[method.name] === P5Component.prototype[method.name] || typeof this[method.name] !== "function") {
                 // if it's not overridden or if name is used for something other than a function
                 throw new TypeError("Abstract method '" + method.name + "' must be implemented by " + this.__proto__.name);
             } else if (this[method.name].length !== method.args) {
@@ -66,7 +66,7 @@ class p5Component {
         const originalProto = this.__proto__;
         return function (sketch) {
             component.initPrototype(sketch);
-            p5Component.tryBindGlobals(sketch);
+            P5Component.tryBindGlobals(sketch);
             sketch.setup = component.setup;
             sketch.draw = component.draw;
             sketch.preload = component.preload;
@@ -75,7 +75,7 @@ class p5Component {
     }
 
     initPrototype(sketch) {
-        this.__proto__ = p5Component.deepClone(this.__proto__);
+        this.__proto__ = P5Component.deepClone(this.__proto__);
         this.sketch = sketch;
         // deep clone the prototype, this is so that the other instances
         // are not affected by adding the sketch to the chain
@@ -95,9 +95,9 @@ class p5Component {
     }
 
     static tryBindGlobals(sketch) {
-        if (!p5Component.isGlobalBound) {
-            p5Component.bindGlobals(sketch);
-            p5Component.isGlobalBound = true
+        if (!P5Component.isGlobalBound) {
+            P5Component.bindGlobals(sketch);
+            P5Component.isGlobalBound = true
         }
     }
 

@@ -1,8 +1,8 @@
 "use strict";
 
-class ImageSketcher extends p5Component {
+class ImageSketcher extends P5Component {
 
-    constructor(image, width, height) {
+    constructor(image, width, height, startStopped = false) {
         super();
         if (image === undefined) {
             throw new TypeError("image is undefined, you must pass an image");
@@ -17,9 +17,12 @@ class ImageSketcher extends p5Component {
         this.particles = [];
         this.particleCount = 50;
         this.stepsPerFrame = 5;
-        this.isStopped = false;
+        this.isStopped = startStopped;
 
         this.forceClear = false;
+
+        this.onClickListener = function () {
+        }
 
     }
 
@@ -95,7 +98,8 @@ class ImageSketcher extends p5Component {
     }
 
     mouseClicked() {
-        //TODO add an custom onclick listener here
+        // TODO implement all the listeners to work with all components
+        this.onClickListener()
     }
 
 }
