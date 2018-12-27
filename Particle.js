@@ -2,13 +2,15 @@
 
 class Particle {
 
-    constructor(sketcher) {
+    constructor(sketcher, convolution) {
 
         this.sketcher = sketcher;
         this.img = sketcher.image;
         this.p5 = sketcher.__proto__;
         // this is where all the p5 utilities are
         // this.p5. is much shorter than this.sketcher.
+
+        this.convolution = convolution; // TODO validate this
 
         this.ppos = this.p5.createVector(0, 0);
         this.pos = this.p5.createVector(0, 0);
