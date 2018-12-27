@@ -43,20 +43,7 @@ class Particle {
     }
 
     // Fade the pixels of the line
-    fadeLineFromImg(x1, y1, x2, y2, fadeFunction) {
-
-        if (fadeFunction === undefined) {
-            const p5 = this.p5; // remove this name ambiguity
-            fadeFunction = function (originColor) {
-                return p5.color(
-                    min(p5.red(originColor) + 50, 255),
-                    min(p5.green(originColor) + 50, 255),
-                    min(p5.blue(originColor) + 50, 255)
-                );
-            }
-        } else if (typeof (fadeFunction) !== "function") {
-            throw "Invalid argument, fadeFunction must be a function"
-        }
+    fadeLineFromImg(x1, y1, x2, y2) {
 
         const xOffset = Math.floor(Math.abs(x1 - x2));
         const yOffset = Math.floor(Math.abs(y1 - y2));
@@ -68,13 +55,17 @@ class Particle {
             if (x < 0 || x >= this.sketcher.width || y < 0 || y >= this.sketcher.height) {
                 continue
             }
-            const originColor = this.img.getColor(x, y);
-            const modifiedColor = fadeFunction(originColor);
-            this.img.setColor(x, y, modifiedColor);
+            const originColor = this.getColor(this.img, x, y);
+            const modifiedColor = this.p5.color(
+                Math.min(this.p5.red(originColor) + 50, 255),
+                Math.min(this.p5.green(originColor) + 50, 255),
+                Math.min(this.p5.blue(originColor) + 50, 255)
+            );
+            Particle.setColor(this.img, x, y, modifiedColor);
         }
     }
 
-    show(canvas) {
+    paint(canvas) {
         this.count++;
         if (this.count > this.maxCount)
             this.reset();
@@ -112,7 +103,7 @@ class Particle {
                 const x = Math.floor(this.pos.x + i);
                 const y = Math.floor(this.pos.y + j);
                 if (x <= this.img.width - 1 && x >= 0 && y < this.img.height - 1 && y >= 0) {
-                    const c = this.p5.color(this.img.getColor(x, y));
+                    const c = this.getColor(this.img, x, y);
                     const b = 1 - this.p5.brightness(c) / 100.0;
                     const v = createVector(i, j);
                     target.add(v.normalize().copy().mult(b));
@@ -171,13 +162,41 @@ class Particle {
         while (!hasFound) {
             this.pos.x = random(1) * this.sketcher.width;
             this.pos.y = random(1) * this.sketcher.height;
-            const b = this.p5.brightness(this.p5.color(this.img.getColor(Math.floor(this.pos.x), Math.floor(this.pos.y))));
+            const b = this.p5.brightness(this.getColor(this.img, Math.floor(this.pos.x), Math.floor(this.pos.y)));
             if (b < 35)
                 hasFound = true;
         }
-        this.drawColor = this.p5.color(this.img.getColor(Math.floor(this.pos.x), Math.floor(this.pos.y)));
+        this.drawColor = this.getColor(this.img, Math.floor(this.pos.x), Math.floor(this.pos.y));
         this.drawColor.setAlpha(this.drawAlpha);
         this.ppos = this.pos.copy();
         this.vel.mult(0);
     }
+
+    /**
+     * This method returns the a color object which represents the color at the specified location the the image.
+     * @param img {p5.Image} the image
+     * @param x {Number} the x coordinate of the pixel
+     * @param y {Number} the y coordinate of the pixel
+     * @return {p5.Color} The color
+     */
+    getColor(img, x, y) {
+        const index = (y * img.width + x) * 4;
+        return this.p5.color(...img.pixels.slice(index, index + 4));
+    };
+
+    /**
+     * This function sets the color of the image at the specified location
+     * @param img {p5.Image} the image
+     * @param x {Number} the x coordinate of the pixel
+     * @param y {Number} the y coordinate of the pixel
+     * @param color {p5.Color}
+     */
+    static setColor(img, x, y, color) {
+        const index = (y * img.width + x) * 4;
+        for (let i = 0; i < 4; i++) {
+            img.pixels[index + i] = color.levels[i];
+            // it is safe to use `levels` (over `red`,`green`... since this will be RGB)
+        }
+    };
+
 }

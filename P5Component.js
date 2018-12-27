@@ -5,10 +5,15 @@
  * This class is the interface between a reusable component and the p5 library, it also proves utilities for making
  * nested components.
  * This method behaves as **abstract** and cannot be instantiated, only inherited from.
- * @see /examples.html for example implementations
+ * [examples.html](/examples.html) for example implementations
  */
 class P5Component {
 
+    /**
+     * This constructor instantiates a P5Component, it enforces all the the fact that this is an abstract class, its
+     * abstract and final methods.  This constructor also overloads `setup` and `preload` to make sure that they are
+     * only called once.
+     */
     constructor() {
         this.isSetup = false;
         this.isPreloaded = false;
@@ -25,7 +30,7 @@ class P5Component {
                 {name: "draw", args: 1}
             ],
             final: [
-                {name: "seed"}
+                {name: "generateSeed"}
             ]
         };
 
@@ -43,7 +48,7 @@ class P5Component {
         }
         // this enforces there not to be an override of the listed methods to make them behave as though they were final
         for (let i = 0; i < emulatedMethodModifiers.final.length; i++) {
-            const method = emulatedMethodModifiers.abstract[i];
+            const method = emulatedMethodModifiers.final[i];
             if (this[method.name] !== P5Component.prototype[method.name]) {
                 throw new TypeError("Final method '" + method.name + "' can not be overridden");
             }
@@ -102,7 +107,8 @@ class P5Component {
      * This method draws the component onto the canvas.
      * If this method is called a canvas must be passed.
      * This method behaves as **abstract** and must be implemented by a child class.
-     * @param canvas {CanvasRenderingContext2D} the canvas where the component will be drawn
+     * @param canvas {p5} the canvas where the component will be drawn
+     * @see p5.redraw
      */
     draw(canvas) {
         // abstract method stub
@@ -114,7 +120,7 @@ class P5Component {
      * This method behaves as **final** and cannot be overridden.
      * @return {Function} the seed
      */
-    seed() {
+    generateSeed() {
         const component = this;
         const originalProto = this.__proto__;
         return function (sketch) {
@@ -151,7 +157,7 @@ class P5Component {
             ];
             listenersToBind.forEach(function (listener) {
                 if (component[listener] !== undefined && typeof component[listener] === "function") {
-                    sketch[listener] = component[listener]
+                    sketch[listener] = component[listener].bind(component)
                 }
             });
         }

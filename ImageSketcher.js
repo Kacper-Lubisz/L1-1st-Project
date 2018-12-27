@@ -17,25 +17,25 @@ class ImageSketcher extends P5Component {
         this.particles = [];
         this.particleCount = 50;
         this.stepsPerFrame = 5;
-        this.isStopped = startStopped;
+        this._isStopped = startStopped;
 
-        this.forceClear = false;
+        this._forceClear = false;
 
-        this.onClickListener = function () {
-        }
+        this._onKeyListener = function (key) {
+        };
+        this._onClickListener = function (x, y) {
+        };
 
     }
 
+    /**
+     * @throws `404 Not found` error if `this.image` is a string an can't be loaded
+     */
     preload() {
-        if (this.isPreloaded) {
-            return
-        }
-
         if (typeof this.image === "string") {
             this.image = this.loadImage(this.image);
+            // this could throw an error if the file isn't found
         }
-
-        this.isPreloaded = true;
     }
 
     setup(parent) {
@@ -65,27 +65,24 @@ class ImageSketcher extends P5Component {
 
     }
 
+    /**
+     * This method draws the image sketcher object on the canvas
+     * @param canvas {p5} The canvas to be drawn on
+     */
     draw(canvas) {
-        if (this.forceClear) {
+        if (this._forceClear) {
             canvas.clear();
-            this.forceClear = false;
+            this._forceClear = false;
         }
 
-        if (!this.isStopped) {
+        if (!this._isStopped) {
 
             for (let i = 0; i < this.particleCount; i++) {
                 for (let j = 0; j < this.stepsPerFrame; j++) {
                     this.particles[i].update();
-                    this.particles[i].show(canvas);
+                    this.particles[i].paint(canvas);
                 }
             }
-        }
-    }
-
-    keyPressed() {
-        console.log(this.key);
-        if (this.key === 's' || this.key === 'S') {
-            this.isStopped = !this.isStopped;
         }
     }
 
@@ -94,12 +91,34 @@ class ImageSketcher extends P5Component {
         this.image = this.createImage(this.floor(this.width), this.floor(this.height));
         this.image.copy(newImage, 0, 0, newImage.width, newImage.height, 0, 0, this.image.width, this.image.height);
         this.image.loadPixels();
-        this.forceClear = true
+        this._forceClear = true
     }
 
     mouseClicked() {
-        // TODO implement all the listeners to work with all components
-        this.onClickListener()
+        this._onClickListener(this.mouseX, this.mouseY)
     }
 
+    keyPressed() {
+        this._onKeyListener(this.key)
+    }
+
+    forceClear() {
+        this._forceClear = true;
+    }
+
+    get startStopped() {
+        return this._isStopped;
+    }
+
+    set startStopped(value) {
+        this._isStopped = value;
+    }
+
+    set onClickListener(value) {
+        this._onClickListener = value;
+    }
+
+    set onKeyListener(value) {
+        this._onKeyListener = value;
+    }
 }
