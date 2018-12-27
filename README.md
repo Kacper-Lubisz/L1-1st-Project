@@ -235,6 +235,11 @@ allows for easy nesting of components looks like.  I think that writing a specif
 complex model, so instead I will implement a nested component to see what needs to be added to the model.  This 
 implementation can be found at `design_tests/test4.html`.
 
+The main points that I took away from this implementation are, The component class should:
+* prevent setup and preload functions from being called multiple times
+* make it so that appropriate default parameters to draw and setup are passed when called by the p5 library.
+* include useful methods to help with nested components 
+
 There is still one big issue that needs to be resolved.  The problem is that the only way to access all the p5 utility
 methods, such as `createVector()`, is through the sketch.  This isn't an issue for the object of the component, but if 
 any other class is used, it will not have access to those methods.
@@ -248,10 +253,13 @@ setup and draw functions can be found.  The p5 function which does this called `
 If you follow this code you can find where (on line 48970) p5 loops through all the keys of the p5 prototype and the 
 global sketch object and makes them global.  It uses a private function called `_createFriendlyGlobalFunctionBinder`.
 
-This is dangerous beca++
-use it makes functions which are instance specific visible globally.  The original p5 code binds 
+This is dangerous because it makes functions which are instance specific visible globally.  The original p5 code binds 
 the global instance to the functions, which would be dangerous and allow any code to call methods on the instance.
 Since I can't go through all 431 keys in the p5 prototype, I can instead just unbind the object.  The dangerous 
 functions will still be public, but now instead they will just error out (arguably a lesser of two evils).  This solution
 is still very imperfect. To demonstrate a common problem, let's consider the `color` function.  It always errors out 
 because it tries to access a color mode variable which is sketch specific.
+
+Another design issue is whether all the listeners should be abstract functions.  Since I would expect that the average
+child class of the `P5Component` class would only implement a small fraction of all event listeners, it'll be cleaner 
+not to force these to be implemented.
