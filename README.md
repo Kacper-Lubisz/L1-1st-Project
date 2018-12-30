@@ -201,7 +201,8 @@ class P5Component {
 ```
 
 This code is still not very nice, but is defiantly cleaner and less destructive than the previous example 
-(`design_tests/test1.html`). The next step is to design a class model.    
+(`design_tests/test1.html`).  The main disadvantage of this (other than the fact that it's a bad practice) is the fact 
+that it almost certainly hinders with browser javascript optimisation.  The next step is to design a class model.
 
 ### Javascript OOP features and thoughts on good abstraction
 
@@ -263,3 +264,16 @@ because it tries to access a color mode variable which is sketch specific.
 Another design issue is whether all the listeners should be abstract functions.  Since I would expect that the average
 child class of the `P5Component` class would only implement a small fraction of all event listeners, it'll be cleaner 
 not to force these to be implemented.
+
+### Designing the component itself
+
+There are a few features that I want to add to the particle image sketcher:
++ Smother drawing graphics (as opposed to the instant line appearing)
+    + implemented by making it so that the life of one particle is spread over more frames
++ Customisation of particles attraction force
+    + Ability to make change the convolution kernel for calculating the attractive force        
+    + Ability to make a completely override the forces felt by the particles
+    + implemented a force adder function
++ Make it so that the particles can be coloured 
++ Allow for customisation of the start point of the particle
+    + implemented using a generator argument

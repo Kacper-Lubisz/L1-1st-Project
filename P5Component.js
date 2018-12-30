@@ -213,7 +213,6 @@ class P5Component {
     static bindGlobals(sketch) {
         // this code is copied and modified from the p5 library, starting on line 48965
         const friendlyBindGlobal = sketch._createFriendlyGlobalFunctionBinder();
-        console.log(Object.getOwnPropertyNames(sketch.__proto__).length);
         for (const key in sketch.__proto__) {
             if (sketch.__proto__.hasOwnProperty(key)) {
                 friendlyBindGlobal(key, sketch.__proto__[key]);
@@ -230,8 +229,11 @@ class P5Component {
     static deepClone(obj) {
         const clone = {};
         Object.getOwnPropertyNames(obj).forEach(key => {
+            const descriptor = Object.getOwnPropertyDescriptor(obj, key);
             if (typeof obj[key] == "object" && obj[key] != null) {
                 clone[key] = this.deepClone(obj[key])
+            } else if (descriptor.get !== undefined || descriptor.set !== undefined) { // this is to add the getters and setters
+                Object.defineProperty(clone, key, {get: descriptor.get, set: descriptor.set})
             } else {
                 clone[key] = obj[key]
             }

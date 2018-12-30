@@ -5,10 +5,12 @@ class Particle {
     constructor(sketcher, convolution) {
 
         this.sketcher = sketcher;
-        this.img = sketcher.image;
+        this.img = sketcher.targetImage;
         this.p5 = sketcher.__proto__;
         // this is where all the p5 utilities are
         // this.p5. is much shorter than this.sketcher.
+
+        this._isAlive = true;
 
         this.convolution = convolution; // TODO validate this
 
@@ -25,7 +27,6 @@ class Particle {
         this.noiseInfluence = 1 / 20.0;
 
         this.dropRate = 0.0004;
-        this.dropRange = 40;
         this.dropAlpha = 150;
         this.drawAlpha = 50;
         this.drawColor = this.p5.color(0, 0, 0, this.drawAlpha);
@@ -105,7 +106,7 @@ class Particle {
                 if (x <= this.img.width - 1 && x >= 0 && y < this.img.height - 1 && y >= 0) {
                     const c = this.getColor(this.img, x, y);
                     const b = 1 - this.p5.brightness(c) / 100.0;
-                    const v = createVector(i, j);
+                    const v = this.p5.createVector(i, j);
                     target.add(v.normalize().copy().mult(b));
                     count++;
                 }
@@ -116,7 +117,7 @@ class Particle {
         }
 
         // Add noise force
-        const n = this.p5.noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, this.sketcher.noiseTimeOffset + this.p5.millis() / 100) * TWO_PI * 10;
+        const n = this.p5.noise(this.pos.x / this.noiseScale, this.pos.y / this.noiseScale, this.sketcher._noiseTimeOffset + this.p5.millis() / 100) * this.p5.TWO_PI * 10;
         const v = p5.Vector.fromAngle(n);
         if (this.force.mag() < 0.01) // this can be replaced with an activation and a blending
             this.force.add(v.mult(this.noiseInfluence * 5));
@@ -124,7 +125,7 @@ class Particle {
             this.force.add(v.mult(this.noiseInfluence));
 
         // Add bound force
-        const boundForce = createVector(0, 0); // all of bounding should be done by one handler
+        const boundForce = this.p5.createVector(0, 0); // all of bounding should be done by one handler
         if (this.pos.x < this.bound) {
             boundForce.x = (this.bound - this.pos.x) / this.bound;
         }
@@ -162,10 +163,13 @@ class Particle {
         while (!hasFound) {
             this.pos.x = random(1) * this.sketcher.width;
             this.pos.y = random(1) * this.sketcher.height;
+
+            // noinspection JSSuspiciousNameCombination, this is to suppress a mistaken IDE warning
             const b = this.p5.brightness(this.getColor(this.img, Math.floor(this.pos.x), Math.floor(this.pos.y)));
             if (b < 35)
                 hasFound = true;
         }
+        // noinspection JSSuspiciousNameCombination, this is to suppress the same mistaken IDE warning
         this.drawColor = this.getColor(this.img, Math.floor(this.pos.x), Math.floor(this.pos.y));
         this.drawColor.setAlpha(this.drawAlpha);
         this.ppos = this.pos.copy();
@@ -198,5 +202,13 @@ class Particle {
             // it is safe to use `levels` (over `red`,`green`... since this will be RGB)
         }
     };
+
+    get isAlive() {
+        return this._isAlive;
+    }
+
+    set isAlive(value) {
+        this._isAlive = value;
+    }
 
 }
