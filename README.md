@@ -274,6 +274,8 @@ There are a few features that I want to add to the particle image sketcher:
     + Ability to make change the convolution kernel for calculating the attractive force        
     + Ability to make a completely override the forces felt by the particles
     + implemented a force adder function
-+ Make it so that the particles can be coloured 
++ Make it so that the particles can be coloured
 + Allow for customisation of the start point of the particle
     + implemented using a generator argument
++ Allow for custom particle death conditions
+
