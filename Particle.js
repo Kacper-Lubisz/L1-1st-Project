@@ -89,7 +89,7 @@ class Particle {
             const x = Math.floor(x1 + (x2 - x1) * i / step);
             const y = Math.floor(y1 + (y2 - y1) * i / step);
             if (x < 0 || x >= this._sketcher.targetImage.width || y < 0 || y >= this._sketcher.targetImage.height) {
-                continue
+                continue;
             }
             const originColor = this._sketcher.getColor(this.img, x, y);
             const modifiedColor = this._p5.color(
@@ -136,13 +136,14 @@ class Particle {
             this.sketcher.particleBehaviours[i].updateParticle(this);
         }
 
-        this.vel.add(this._force); // force should really be replaced with impulse
-        this.vel.mult(this.dampeningFactor);
-        if (this.vel.mag() > this.maxSpeed) {
-            this.vel.mult(this.maxSpeed / this.vel.mag());
+        this._vel.add(this._force); // force should really be replaced with impulse
+        this._vel.mult(this.dampeningFactor);
+
+        if (this._vel.mag() > this.maxSpeed) {
+            this._vel.mult(this.maxSpeed / this._vel.mag());
         }
 
-        this._pos.add(this.vel);
+        this._pos.add(this._vel);
 
     }
 
@@ -184,7 +185,7 @@ class Particle {
      */
     set isAlive(value) {
         if (typeof value !== "boolean") {
-            throw TypeError("Is alive must be a boolean")
+            throw TypeError("Is alive must be a boolean");
         } else {
             this._isAlive = value;
         }
@@ -204,7 +205,7 @@ class Particle {
      */
     set pos(value) {
         if (!value instanceof p5.Vector) {
-            throw TypeError("Position must be an instance of p5.Vector")
+            throw TypeError("Position must be an instance of p5.Vector");
         } else {
             this._pos = value;
         }
@@ -232,7 +233,7 @@ class Particle {
      */
     set vel(value) {
         if (!value instanceof p5.Vector) {
-            throw TypeError("Velocity must be an instance of p5.Vector")
+            throw TypeError("Velocity must be an instance of p5.Vector");
         } else {
             this._vel = value;
         }
@@ -252,7 +253,7 @@ class Particle {
      */
     set force(value) {
         if (!value instanceof p5.Vector) {
-            throw TypeError("Force must be an instance of p5.Vector")
+            throw TypeError("Force must be an instance of p5.Vector");
         } else {
             this._force = value;
         }
@@ -272,7 +273,7 @@ class Particle {
      */
     set color(value) {
         if (!value instanceof p5.Color) {
-            throw TypeError("Color must be an instance of p5.Color")
+            throw TypeError("Color must be an instance of p5.Color");
         } else {
             this._color = value;
         }
@@ -285,7 +286,7 @@ class Particle {
      */
     get dampeningFactor() {
         if (this._dampeningFactor === undefined) {
-            return this.sketcher.dampeningFactor
+            return this.sketcher.dampeningFactor;
         } else {
             return this._dampeningFactor;
         }
@@ -299,9 +300,9 @@ class Particle {
         if (value === undefined) {
             this._dampeningFactor = undefined;
         } else if (typeof value !== "number") {
-            throw TypeError("Dampening Factor must be a number or undefined")
+            throw TypeError("Dampening Factor must be a number or undefined");
         } else if (!Number.isFinite(value)) {
-            throw Error("Dampening Factor must be finite")
+            throw Error("Dampening Factor must be finite");
         } else {
             this._dampeningFactor = value;
         }
@@ -313,7 +314,7 @@ class Particle {
      */
     get maxSpeed() {
         if (this._maxSpeed === undefined) {
-            return this._sketcher.maxSpeed
+            return this._sketcher.maxSpeed;
         } else {
             return this._maxSpeed;
         }
@@ -325,13 +326,13 @@ class Particle {
      */
     set maxSpeed(value) {
         if (value === undefined) {
-            this._maxSpeed = Number.MIN_VALUE;
+            this._maxSpeed = undefined;
         } else if (typeof value !== "number") {
-            throw TypeError("Max speed must be a number")
+            throw TypeError("Max speed must be a number");
         } else if (!Number.is(value)) {
-            throw Error("Max speed must be finite")
+            throw Error("Max speed must be finite");
         } else if (value < 0) {
-            throw Error("Max speed must positive")
+            throw Error("Max speed must positive");
         } else {
             this._maxSpeed = value;
         }
@@ -343,7 +344,7 @@ class Particle {
      */
     get dropRate() {
         if (this._dropRate === undefined) {
-            return this._sketcher.dropRate
+            return this._sketcher.dropRate;
         } else {
             return this._dropRate;
         }
@@ -354,12 +355,14 @@ class Particle {
      * @param value {Number} new drop rate
      */
     set dropRate(value) {
-        if (typeof value !== "number") {
-            throw TypeError("Drop rate must be a number")
+        if (value === undefined) {
+            this._dropRate = undefined;
+        } else if (typeof value !== "number") {
+            throw TypeError("Drop rate must be a number");
         } else if (!Number.is(value)) {
-            throw Error("Drop rate must be finite")
+            throw Error("Drop rate must be finite");
         } else if (value < 0 || value > 1) {
-            throw Error("Drop rate must be between 0 and 1 (inclusively)")
+            throw Error("Drop rate must be between 0 and 1 (inclusively)");
         } else {
             this._dropRate = value;
         }
@@ -371,7 +374,7 @@ class Particle {
      */
     get dropAlpha() {
         if (this._dropAlpha === undefined) {
-            return this._sketcher.dropAlpha
+            return this._sketcher.dropAlpha;
         } else {
             return this._dropAlpha;
         }
@@ -382,12 +385,14 @@ class Particle {
      * @param value {Number}
      */
     set dropAlpha(value) {
-        if (typeof value !== "number") {
-            throw TypeError("Drop alpha must be a number")
+        if (value === undefined) {
+            this._drawAlpha = undefined;
+        } else if (typeof value !== "number") {
+            throw TypeError("Drop alpha must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Drop alpha must be finite")
+            throw Error("Drop alpha must be finite");
         } else if (value < 0 || value > 255) {
-            throw Error("Drop alpha must be between 0 and 255 (inclusively)")
+            throw Error("Drop alpha must be between 0 and 255 (inclusively)");
         } else {
             this._dropAlpha = value;
         }
@@ -400,9 +405,10 @@ class Particle {
      */
     get dropMaxSize() {
         if (this._dropMaxSize === undefined) {
-            return this._sketcher.dropMaxSize
+            return this._sketcher.dropMaxSize;
+        } else {
+            return this._dropMaxSize;
         }
-        return this._dropMaxSize;
     }
 
     /**
@@ -410,12 +416,14 @@ class Particle {
      * @param value {Number} the new max size
      */
     set dropMaxSize(value) {
-        if (typeof value !== "number") {
-            throw TypeError("Max drop size must be a number")
+        if (value === undefined) {
+            this._dropMaxSize = undefined;
+        } else if (typeof value !== "number") {
+            throw TypeError("Max drop size must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Max drop size must be finite")
+            throw Error("Max drop size must be finite");
         } else if (value < 0) {
-            throw Error("Max drop size must be positive")
+            throw Error("Max drop size must be positive");
         } else {
             this._dropMaxSize = value;
         }
@@ -428,7 +436,7 @@ class Particle {
      */
     get drawAlpha() {
         if (this._drawAlpha === undefined) {
-            return this._sketcher.drawAlpha
+            return this._sketcher.drawAlpha;
         } else {
             return this._drawAlpha;
         }
@@ -439,12 +447,14 @@ class Particle {
      * @param value {Number} the new opacity
      */
     set drawAlpha(value) {
-        if (typeof value !== "number") {
-            throw TypeError("Draw alpha must be a number")
+        if (value === undefined) {
+            this._drawAlpha = undefined;
+        } else if (typeof value !== "number") {
+            throw TypeError("Draw alpha must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Draw alpha must be finite")
+            throw Error("Draw alpha must be finite");
         } else if (value < 0 || value > 255) {
-            throw Error("Draw alpha must be between 0 and 255 (inclusively)")
+            throw Error("Draw alpha must be between 0 and 255 (inclusively)");
         } else {
             this._drawAlpha = value;
         }
@@ -456,7 +466,7 @@ class Particle {
      */
     get drawWeight() {
         if (this._drawWeight === undefined) {
-            return this._sketcher.drawWeight
+            return this._sketcher.drawWeight;
         } else {
             return this._drawWeight;
         }
@@ -467,12 +477,14 @@ class Particle {
      * @param value {Number} the new width
      */
     set drawWeight(value) {
-        if (typeof value !== "number") {
-            throw TypeError("Draw weight must be a number")
+        if (value === undefined) {
+            this._drawWeight = undefined;
+        } else if (typeof value !== "number") {
+            throw TypeError("Draw weight must be a number or undefined");
         } else if (!Number.isFinite(value)) {
-            throw Error("Draw weight must be finite")
+            throw Error("Draw weight must be finite");
         } else if (value < 0) {
-            throw Error("Draw weight must be positive")
+            throw Error("Draw weight must be positive");
         } else {
             this._drawWeight = value;
         }

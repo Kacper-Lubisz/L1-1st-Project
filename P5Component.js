@@ -81,8 +81,8 @@ class P5Component {
                 // this is under the assumption that canvas is only called with no parameters by p5
                 // this isn't safe, but in js there is no way to use visibility modifiers to prevent this from happening
             }
-            originalFunctions.draw(canvas)
-        }
+            originalFunctions.draw(canvas);
+        };
 
     }
 
@@ -160,10 +160,10 @@ class P5Component {
             ];
             listenersToBind.forEach(function (listener) {
                 if (component[listener] !== undefined && typeof component[listener] === "function") {
-                    sketch[listener] = component[listener].bind(component)
+                    sketch[listener] = component[listener].bind(component);
                 }
             });
-        }
+        };
     }
 
     /**
@@ -209,11 +209,11 @@ class P5Component {
         Object.getOwnPropertyNames(obj).forEach(key => {
             const descriptor = Object.getOwnPropertyDescriptor(obj, key);
             if (typeof obj[key] == "object" && obj[key] != null) {
-                clone[key] = this.deepClone(obj[key])
+                clone[key] = this.deepClone(obj[key]);
             } else if (descriptor.get !== undefined || descriptor.set !== undefined) { // this is to add the getters and setters
-                Object.defineProperty(clone, key, {get: descriptor.get, set: descriptor.set})
+                Object.defineProperty(clone, key, {get: descriptor.get, set: descriptor.set});
             } else {
-                clone[key] = obj[key]
+                clone[key] = obj[key];
             }
         });
         return clone;

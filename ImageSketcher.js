@@ -76,9 +76,9 @@ class ImageSketcher extends P5Component {
      */
     preload() {
         if (this._defaultVel === undefined) {
-            this._defaultVel = this.createVector(0, 0)
+            this._defaultVel = this.createVector(0, 0);
         }
-        this._targetImage = this.loadImage(this.targetImageURL)
+        this._targetImage = this.loadImage(this.targetImageURL);
     }
 
     setup(parent) {
@@ -157,11 +157,11 @@ class ImageSketcher extends P5Component {
     }
 
     mouseClicked() {
-        this._onClickListener(this.mouseX, this.mouseY)
+        this._onClickListener(this.mouseX, this.mouseY);
     }
 
     keyPressed() {
-        this._onKeyListener(this.key)
+        this._onKeyListener(this.key);
     }
 
     forceClear() {
@@ -170,7 +170,7 @@ class ImageSketcher extends P5Component {
 
     reset() {
         this._forceClear = true;
-        this.targetImageURL = this.targetImageURL // call setter to reset the target image
+        this.targetImageURL = this.targetImageURL; // call setter to reset the target image
     }
 
     get isStopped() {

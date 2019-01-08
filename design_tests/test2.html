@@ -27,7 +27,7 @@
                         originalProto.draw.call(component, sketch);
                     };
 
-                }
+                };
             }
 
             initPrototype(sketch) {
@@ -76,7 +76,7 @@
             }
 
             setup() {
-                this.createCanvas(this.dimentions.width, this.dimentions.height)
+                this.createCanvas(this.dimentions.width, this.dimentions.height);
             }
 
             draw(canvas) {
@@ -89,7 +89,7 @@
                 return {
                     x: 75 + 50 * Math.sin(this.millis() / 1000),
                     y: 75 + 50 * Math.cos(this.millis() / 1000)
-                }
+                };
             }
         }
 
@@ -102,7 +102,7 @@
 
             addChild(child) {
                 if (this.isSetup) {
-                    throw "Children can only be added before the component is setup"
+                    throw "Children can only be added before the component is setup";
                 } else {
 
                     child.initPrototype(this.__proto__);
@@ -110,7 +110,7 @@
                     child.pos = {
                         x: 200 * this.children.length,
                         y: 0
-                    }
+                    };
                 }
             }
 
@@ -121,7 +121,7 @@
                     this.children[i].pos = {
                         x: 200 * i,
                         y: 0
-                    }
+                    };
                 }
                 this.isSetup = true;
             }
@@ -142,7 +142,7 @@
             nested.addChild(new ExampleComponent({width: 200, height: 200}));
             nested.addChild(new ExampleComponent({width: 200, height: 200}));
 
-            new p5(nested.seed, document.getElementById("example"))
+            new p5(nested.seed, document.getElementById("example"));
 
         });
     </script>

@@ -32,7 +32,7 @@
                     sketch.draw = function () {
                         originalProto.draw.call(component, sketch);
                     };
-                }
+                };
             }
 
             initPrototype(sketch) {
@@ -50,7 +50,7 @@
 
             setupChild(child) {
                 if (child.isSetup) {
-                    return
+                    return;
                 }
 
                 child.initPrototype(this.sketch);
@@ -62,9 +62,9 @@
                 const clone = {};
                 Object.getOwnPropertyNames(obj).forEach(key => {
                     if (typeof obj[key] == "object" && obj[key] != null) {
-                        clone[key] = this.deepClone(obj[key])
+                        clone[key] = this.deepClone(obj[key]);
                     } else {
-                        clone[key] = obj[key]
+                        clone[key] = obj[key];
                     }
                 });
                 return clone;
@@ -82,7 +82,7 @@
 
             setup(parent) {
                 if (this.isSetup) {
-                    return
+                    return;
                 }
 
                 if (parent === undefined) {
@@ -109,7 +109,7 @@
                 return {
                     x: 75 + 50 * Math.sin((this.isClockwise ? -1 : 1) * this.millis() / 1000),
                     y: 75 + 50 * Math.cos((this.isClockwise ? -1 : 1) * this.millis() / 1000)
-                }
+                };
             }
 
         }
@@ -122,7 +122,7 @@
 
             setup(parent) {
                 if (this.isSetup) {
-                    return
+                    return;
                 }
 
                 if (parent === undefined) {
@@ -131,7 +131,7 @@
                 }
                 for (let i = 0; i < this.children.length; i++) {
                     super.setupChild(this.children[i]);
-                    this.children[i].position = {x: (i % 2) * 200, y: Math.floor(i / 2) * 200}
+                    this.children[i].position = {x: (i % 2) * 200, y: Math.floor(i / 2) * 200};
                 }
 
                 this.isSetup = true;
@@ -158,10 +158,10 @@
 
             setup(parent) {
                 if (this.isSetup) {
-                    return
+                    return;
                 }
                 if (parent === undefined) {
-                    this.createCanvas(400, 400, this.WEBGL)
+                    this.createCanvas(400, 400, this.WEBGL);
                 }
                 super.setupChild(this.child);
 
@@ -226,7 +226,7 @@
             }
             const nested = new NestedExampleComponent(children);
 
-            new p5(new ProjectionExampleComponent(nested).seed, document.getElementById("example3"))
+            new p5(new ProjectionExampleComponent(nested).seed, document.getElementById("example3"));
 
         });
 
@@ -270,9 +270,9 @@
                 let code = removeLeadingWhiteSpace(lines.slice(ranges[i][0] - 15, ranges[i][1] - 15)).join("\n");
                 document.getElementById("example_" + i + "_code").innerHTML = "<pre><code class='language-js'>" + code;
             }
-            Prism.highlightAll()
+            Prism.highlightAll();
 
-        })
+        });
 
     </script>
 

@@ -30,7 +30,7 @@
                                 throw "The use of the key, " + key +
                                 ", in the implementation of custom components is forbidden";
                             } else {
-                                sketch[key] = originalProto[key]
+                                sketch[key] = originalProto[key];
                             }
                         }
                     });
@@ -40,7 +40,7 @@
                     sketch.draw = function () {
                         originalProto.draw.call(component);
                     };
-                }
+                };
             }
         }
 
@@ -51,7 +51,7 @@
             }
 
             setup() {
-                this.canvas = this.createCanvas(this.dimensions.width, this.dimensions.height)
+                this.canvas = this.createCanvas(this.dimensions.width, this.dimensions.height);
             }
 
             draw() {
@@ -64,7 +64,7 @@
                 return {
                     x: 75 + 50 * Math.sin(this.millis() / 1000),
                     y: 75 + 50 * Math.cos(this.millis() / 1000)
-                }
+                };
             }
         }
 

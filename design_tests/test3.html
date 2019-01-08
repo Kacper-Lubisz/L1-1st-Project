@@ -27,7 +27,7 @@
                         originalProto.draw.call(component, sketch);
                     };
 
-                }
+                };
             }
 
             initPrototype(sketch) {
@@ -46,9 +46,9 @@
                 const clone = {};
                 Object.getOwnPropertyNames(obj).forEach(key => {
                     if (typeof obj[key] == "object" && obj[key] != null) {
-                        clone[key] = this.deepClone(obj[key])
+                        clone[key] = this.deepClone(obj[key]);
                     } else {
-                        clone[key] = obj[key]
+                        clone[key] = obj[key];
                     }
                 });
                 return clone;
@@ -63,7 +63,7 @@
             }
 
             setup() {
-                this.createCanvas(this.dimentions.width, this.dimentions.height)
+                this.createCanvas(this.dimentions.width, this.dimentions.height);
             }
 
             draw(canvas) {
@@ -76,7 +76,7 @@
                 return {
                     x: 75 + 50 * Math.sin(this.millis() / 1000),
                     y: 75 + 50 * Math.cos(this.millis() / 1000)
-                }
+                };
             }
         }
 

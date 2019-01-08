@@ -28,18 +28,26 @@
 
     <script>
         let sketcher;
+        let behaviours;
         $(function () {
 
-            const sketcherEventMakers = {
-                attraction: ImageSketcher.makeEventSimpleAttractiveForce,
-                noise: ImageSketcher.makeEventAddNoiseForce,
-                limitDeath: ImageSketcher.makeEventUpdateLimitDeath,
-                boundsForce: ImageSketcher.makeEventLinearOutOfBoundsForce,
-                distanceDeath: ImageSketcher.makeEventMaxDistanceTraveledDeath,
-                evolve: ImageSketcher.makeEventEvolveColor,
-                boundsDeath: ImageSketcher.makeEventOutOfBoundsDeath
+            behaviours = {
+                attraction: new SimpleAttractiveForceBehaviour(),
+                noise: new NoiseForceBehaviour(),
+                limitDeath: new UpdateLimitDeathBehaviour(),
+                boundsForce: new LinearOutOfBoundsForceBehaviour(),
+                distanceDeath: new MaxDistanceTraveledDeath(),
+                evolve: new EvolveColorBehaviour(),
+                boundsDeath: new OutOfBoundsDeathBehaviour()
             };
-            sketcher = new ImageSketcher("images/test7.png", 700, undefined, {});
+            sketcher = new ImageSketcher("images/test7.png", 700, undefined, {
+                particleBehaviours: [
+                    behaviours.attraction,
+                    behaviours.noise,
+                    behaviours.limitDeath,
+                    behaviours.boundsForce,
+                ]
+            });
             const form = getFormObject();
 
             new p5(sketcher.generateSeed(), document.getElementById("sketch"), true);
@@ -69,19 +77,19 @@
                 if (!isNaN(Number(input))) {
                     let next = input;
                     if (max !== undefined) {
-                        next = Math.min(input, max)
+                        next = Math.min(input, max);
                     }
                     if (min !== undefined) {
-                        next = Math.max(input, min)
+                        next = Math.max(input, min);
                     }
                     if (willRoundDown) {
-                        next = Math.floor(next)
+                        next = Math.floor(next);
                     }
                     return next;
                 } else if (input === "") {
-                    return emptyString
+                    return emptyString;
                 } else {
-                    return undefined
+                    return undefined;
                 }
             };
 
@@ -96,12 +104,12 @@
                     } else {
                         textField.val(sketcher[propertyKey]);
                     }
-                }
+                };
             };
 
             form.pause.click(function () {
                 sketcher.isStopped = !sketcher.isStopped;
-                form.pause.html(sketcher.isStopped ? "Resume" : "Pause")
+                form.pause.html(sketcher.isStopped ? "Resume" : "Pause");
             });
             form.clear.click(sketcher.forceClear.bind(sketcher));
             form.reset.click(sketcher.reset.bind(sketcher));
@@ -113,11 +121,11 @@
 
             form.width.change(function () {
                 const {width, height} = getSize();
-                sketcher.setSize(width, height)
+                sketcher.setSize(width, height);
             });
             form.height.change(function () {
                 const {width, height} = getSize();
-                sketcher.setSize(width, height)
+                sketcher.setSize(...getSize());
             });
 
             form.particleCount.change(makeSimpleNumberOnChangeFunction(
@@ -132,6 +140,26 @@
             ));
 
             form.defaultVel.change(function () {
+                const value = form.defaultVel.val();
+
+                let next;
+                const sections = value.split(",");
+                if (sections.length !== 2) {
+                    next = undefined;
+                } else {
+                    const [x, y] = sections;
+                    if (Number.isFinite(Number(x)) && Number.isFinite(Number(y))) {
+                        next = sketcher.createVector(Number(x), Number(y));
+                    } else {
+                        next = undefined;
+                    }
+                }
+                if (next !== undefined) {
+                    form.defaultVel.val(next.x + "," + next.y);
+                    sketcher.defaultVel = next;
+                } else {
+                    form.defaultVel.val(sketcher.defaultVel.x + "," + sketcher.defaultVel.y);
+                }
 
             });
             form.dampeningFactor.change(makeSimpleNumberOnChangeFunction(
@@ -195,7 +223,33 @@
                 drawAlpha: $("#drawAlpha"),
                 drawWeight: $("#drawWeight"),
 
-            }
+                attractionSwitch: $("#attractionSwitch"),
+                attractionKernelSize: $("#attractionKernelSize"),
+                attractionForceFactor: $("#attractionForceFactor"),
+                attractionAverage: $("#attractionAverage"),
+
+                noiseSwitch: $("#noiseSwitch"),
+                noiseScale: $("#noiseScale"),
+                noiseInfluence: $("#noiseInfluence"),
+                noiseTimeFactor: $("#noiseTimeFactor"),
+
+                limitDeathSwitch: $("#limitDeathSwitch"),
+                limitDeathMaxLife: $("#limitDeathMaxLife"),
+
+                boundsForceSwitch: $("#boundsForceSwitch"),
+                boundsForceBounds: $("#boundsForceBounds"),
+                boundsForceFactor: $("#boundsForceFactor"),
+
+                distanceDeathSwitch: $("#distanceDeathSwitch"),
+                distanceDeathDistance: $("#distanceDeathDistance"),
+
+                evolveSwitch: $("#evolveSwitch"),
+                evolveChangeRate: $("#evolveChangeRate"),
+                evolveKernelSize: $("#evolveKernelSize"),
+
+                boundsDeathSwitch: $("#boundsDeathSwitch"),
+
+            };
         }
 
         function updateFormToSketcher(form, sketcher) {
@@ -218,6 +272,41 @@
 
             form.drawAlpha.val(sketcher.drawAlpha);
             form.drawWeight.val(sketcher.drawWeight);
+
+            console.log(sketcher.particleBehaviours);
+            console.log(behaviours);
+
+            form.attractionSwitch.text(sketcher.particleBehaviours.includes(behaviours.attraction) ? "On" : "Off");
+            form.attractionKernelSize.val(behaviours.attraction.kernelWidth + "," + behaviours.attraction.kernelHeight);
+            form.attractionForceFactor.val(behaviours.attraction.forceFactor);
+            form.attractionAverage.text(behaviours.attraction.willAverage ? "On" : "Off");
+
+            form.noiseSwitch.text(sketcher.particleBehaviours.includes(behaviours.noise) ? "On" : "Off");
+            form.noiseScale.val(behaviours.noise.noiseScale);
+            form.noiseInfluence.val(behaviours.noise.noiseInfluence);
+            form.noiseTimeFactor.val(behaviours.noise.timeFactor);
+
+            form.limitDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.limitDeath) ? "On" : "Off");
+            form.limitDeathMaxLife.val(behaviours.limitDeath.maxLife); // it can't be a function in this example
+
+            form.boundsForceSwitch.text(sketcher.particleBehaviours.includes(behaviours.boundsForce) ? "On" : "Off");
+            form.boundsForceBounds.val(
+                behaviours.boundsForce.top + "," +
+                behaviours.boundsForce.right + "," +
+                behaviours.boundsForce.bottom + "," +
+                behaviours.boundsForce.left
+            );
+            form.boundsForceFactor.val(behaviours.boundsForce.forceFactor);
+
+            form.distanceDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.distanceDeath) ? "On" : "Off");
+            form.distanceDeathDistance.val(behaviours.distanceDeath.maxDistance);
+
+            form.evolveSwitch.text(sketcher.particleBehaviours.includes(behaviours.evolve) ? "On" : "Off");
+            form.evolveChangeRate.val(behaviours.evolve.changeRate);
+            form.evolveKernelSize.val(behaviours.evolve.kernelWidth + "," + behaviours.evolve.kernelHeight);
+
+            form.boundsDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.boundsDeath) ? "On" : "Off");
+
         }
 
     </script>
@@ -580,7 +669,7 @@
         </small>
         <div class="row">
             <div class="col">
-                <label for="boundsForceSwitch"><b>Turn On/Off</b></label>
+                <label for="boundsDeathSwitch"><b>Turn On/Off</b></label>
                 <div class="input-group mb-3">
                     <button id="boundsDeathSwitch" class="btn btn-primary btn-block">On</button>
                 </div>

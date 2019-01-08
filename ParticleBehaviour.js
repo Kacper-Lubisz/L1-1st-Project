@@ -140,9 +140,9 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
      */
     set forceFactor(value) {
         if (typeof value !== "number") {
-            throw TypeError("Force factor must be a number")
+            throw TypeError("Force factor must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Force factor must be finite")
+            throw Error("Force factor must be finite");
         } else {
             this._forceFactor = value;
         }
@@ -162,7 +162,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
      */
     set willAverage(value) {
         if (typeof value !== "boolean") {
-            throw TypeError("Will average must be a boolean")
+            throw TypeError("Will average must be a boolean");
         } else {
             this._willAverage = value;
         }
@@ -187,7 +187,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
         } else if (Array.isArray(value) && value.length === 2) {
             [this.kernelWidth, this.kernelHeight] = value; // calls the two sub setters
         } else {
-            throw TypeError("Kernel size must be either a number or an Array of length 2")
+            throw TypeError("Kernel size must be either a number or an Array of length 2");
         }
     }
 
@@ -205,9 +205,9 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
      */
     set kernelWidth(value) {
         if (typeof value !== "number") {
-            throw TypeError("Kernel width must be a number")
+            throw TypeError("Kernel width must be a number");
         } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
-            throw TypeError("Kernel width must be an integer")
+            throw TypeError("Kernel width must be an integer");
         } else {
             this._kernelWidth = value;
         }
@@ -227,9 +227,9 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
      */
     set kernelHeight(value) {
         if (typeof value !== "number") {
-            throw TypeError("Kernel height must be a number")
+            throw TypeError("Kernel height must be a number");
         } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
-            throw TypeError("Kernel height must be an integer")
+            throw TypeError("Kernel height must be an integer");
         } else {
             this._kernelHeight = value;
         }
@@ -255,9 +255,9 @@ class NoiseForceBehaviour extends ParticleBehaviour {
         this.timeFactor = timeFactor;
 
         if (typeof noiseTimeOffset !== "number") {
-            throw TypeError("Noise time offset must be a number")
+            throw TypeError("Noise time offset must be a number");
         } else if (!Number.isFinite(noiseTimeOffset)) {
-            throw TypeError("Noise time offset must be finite")
+            throw TypeError("Noise time offset must be finite");
         } else {
             this._noiseTimeOffset = noiseTimeOffset;
         }
@@ -304,9 +304,9 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      */
     set noiseScale(value) {
         if (typeof value !== "number") {
-            throw TypeError("Noise scale must be a number")
+            throw TypeError("Noise scale must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Noise scale must be finite")
+            throw Error("Noise scale must be finite");
         } else {
             this._noiseScale = value;
         }
@@ -326,9 +326,9 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      */
     set noiseInfluence(value) {
         if (typeof value !== "number") {
-            throw TypeError("Noise influence must be a number")
+            throw TypeError("Noise influence must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Noise influence must be finite")
+            throw Error("Noise influence must be finite");
         } else {
             this._noiseInfluence = value;
         }
@@ -348,9 +348,9 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      */
     set timeFactor(value) {
         if (typeof value !== "number") {
-            throw TypeError("Time factor must be a number")
+            throw TypeError("Time factor must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Time factor must be finite")
+            throw Error("Time factor must be finite");
         } else {
             this._timeFactor = value;
         }
@@ -367,7 +367,7 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
      * Instantiates a new object of UpdateLimitDeathBehaviour
      * @param maxLife {Number|Function} The number of updates or a function which returns the number of updates
      */
-    constructor(maxLife) {
+    constructor(maxLife = 100) {
         super();
 
         this._updatesLived = new Map();
@@ -407,9 +407,9 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
             if (typeof this._maxLife === "function") {
                 const updates = this._maxLife(particle);
                 if (typeof updates !== "number") {
-                    throw TypeError("The max updates function must return a number")
+                    throw TypeError("The max updates function must return a number");
                 } else if (!Number.isFinite(updates)) {
-                    throw TypeError("The max updates function must return a finite number")
+                    throw TypeError("The max updates function must return a finite number");
                 } else {
                     this._max.set(particle, updates);
                 }
@@ -444,7 +444,7 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
      */
     set maxLife(value) {
         if (typeof value !== "function" && typeof value !== "number") {
-            throw TypeError("MaxLife must either be a number or a function which returns a number")
+            throw TypeError("MaxLife must either be a number or a function which returns a number");
         } else {
             this._maxLife = value;
         }
@@ -461,9 +461,9 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
      * Instantiates a new object of LinearOutOfBoundsForceBehaviour
      * @param bounds {Number|Object} the number distance from the edges or an object with the keys 'top', 'right',
      * 'bottom' and or 'left'
-     * @param boundForceFactor {Number} The magnitude of the max force on the particle
+     * @param forceFactor {Number} The magnitude of the max force on the particle
      */
-    constructor(bounds = 20, boundForceFactor = 0.25) {
+    constructor(bounds = 20, forceFactor = 0.25) {
         super();
 
         this._top = 0;
@@ -484,9 +484,9 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
             this._left = bounds.left || 0;
         } else {
             throw TypeError("bounds must either be a number or an object containing the keys 'top', 'right'," +
-                " 'bottom' or 'left'")
+                " 'bottom' or 'left'");
         }
-        this._boundForceFactor = boundForceFactor;
+        this._forceFactor = forceFactor;
 
     }
 
@@ -518,8 +518,118 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
         if (particle.pos.y > particle.img.height - this._top) {
             boundForce.y = (particle.pos.y - particle.img.height) / this._top;
         }
-        particle.force.add(boundForce.mult(this._boundForceFactor));
+        particle.force.add(boundForce.mult(this._forceFactor));
 
+    }
+
+    /**
+     * Returns the force factor
+     * @return {Number} the force factor
+     */
+    get forceFactor() {
+        return this._forceFactor;
+    }
+
+    /**
+     * Sets the force factor
+     * @param value {Number} the new force factor
+     */
+    set forceFactor(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Force factor must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Force factor must be finite");
+        } else {
+            this._forceFactor = value;
+        }
+    }
+
+    /**
+     * Returns the top bound
+     * @return {Number} top bound
+     */
+    get top() {
+        return this._top;
+    }
+
+    /**
+     * Sets the top bound
+     * @param value the new bound
+     */
+    set top(value) {
+        if (typeof value !== "number") {
+            throw TypeError("The top bound must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("The top bound must be finite");
+        } else {
+            this._top = value;
+        }
+    }
+
+    /**
+     * Returns the right bound
+     * @return {Number} right bound
+     */
+    get right() {
+        return this._right;
+    }
+
+    /**
+     * Sets the right bound
+     * @param value the new bound
+     */
+    set right(value) {
+        if (typeof value !== "number") {
+            throw TypeError("The right bound must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("The right bound must be finite");
+        } else {
+            this._right = value;
+        }
+    }
+
+    /**
+     * Returns the bottom bound
+     * @return {Number} bottom bound
+     */
+    get bottom() {
+        return this._bottom;
+    }
+
+    /**
+     * Sets the bottom bound
+     * @param value the new bound
+     */
+    set bottom(value) {
+        if (typeof value !== "number") {
+            throw TypeError("The bottom bound must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("The bottom bound must be finite");
+        } else {
+            this._bottom = value;
+        }
+    }
+
+    /**
+     * Returns the left bound
+     * @return {Number} left bound
+     */
+    get left() {
+        return this._left;
+    }
+
+    /**
+     * Sets the left bound
+     * @param value the new bound
+     */
+    set left(value) {
+        if (typeof value !== "number") {
+            throw TypeError("The left bound must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("The left bound must be finite");
+        } else {
+            this._left = value;
+        }
     }
 }
 
@@ -531,7 +641,7 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
      * Instantiates a new object of MaxDistanceTraveledDeath
      * @param maxDistance {Number|Function}  The distance number or a function which returns the distance
      */
-    constructor(maxDistance) {
+    constructor(maxDistance = 50) {
         super();
 
         this.distanceTraveled = new Map();
@@ -570,11 +680,11 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
             this.distanceTraveled.set(particle, distance);
 
             if (typeof this._maxDistance === "function") {
-                const distance = this._maxDistance(particle);
+                const distance = this._maxDistance.call(particle);
                 if (typeof distance !== "number") {
-                    throw TypeError("The max distance function must return a number")
+                    throw TypeError("The max distance function must return a number");
                 } else if (!Number.isFinite(distance)) {
-                    throw TypeError("The max distance function must return a finite number")
+                    throw TypeError("The max distance function must return a finite number");
                 } else {
                     this.max.set(particle, distance);
                 }
@@ -608,7 +718,7 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
      */
     set maxDistance(value) {
         if (typeof value !== "function" && typeof value !== "number") {
-            throw TypeError("maxDistance must either be a number or a function which returns a number")
+            throw TypeError("maxDistance must either be a number or a function which returns a number");
         } else {
             this._maxDistance = value;
         }
@@ -677,7 +787,7 @@ class EvolveColorBehaviour extends ParticleBehaviour {
                 (1 - this._changeRate) * particle.color.levels[1] + this._changeRate * averageColor.g,
                 (1 - this._changeRate) * particle.color.levels[2] + this._changeRate * averageColor.b,
                 particle.color.levels[3]
-            )
+            );
         }
     }
 
@@ -700,7 +810,7 @@ class EvolveColorBehaviour extends ParticleBehaviour {
         } else if (Array.isArray(value) && value.length === 2) {
             [this.kernelWidth, this.kernelHeight] = value; // calls the two sub setters
         } else {
-            throw TypeError("Kernel size must be either a number or an Array of length 2")
+            throw TypeError("Kernel size must be either a number or an Array of length 2");
         }
     }
 
@@ -718,9 +828,9 @@ class EvolveColorBehaviour extends ParticleBehaviour {
      */
     set kernelWidth(value) {
         if (typeof value !== "number") {
-            throw TypeError("Kernel width must be a number")
+            throw TypeError("Kernel width must be a number");
         } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
-            throw TypeError("Kernel width must be an integer")
+            throw TypeError("Kernel width must be an integer");
         } else {
             this._kernelWidth = value;
         }
@@ -740,9 +850,9 @@ class EvolveColorBehaviour extends ParticleBehaviour {
      */
     set kernelHeight(value) {
         if (typeof value !== "number") {
-            throw TypeError("Kernel height must be a number")
+            throw TypeError("Kernel height must be a number");
         } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
-            throw TypeError("Kernel height must be an integer")
+            throw TypeError("Kernel height must be an integer");
         } else {
             this._kernelHeight = value;
         }
@@ -762,11 +872,11 @@ class EvolveColorBehaviour extends ParticleBehaviour {
      */
     set changeRate(value) {
         if (typeof value !== "number") {
-            throw TypeError("Change rate must be a number")
+            throw TypeError("Change rate must be a number");
         } else if (!Number.isFinite(value)) {
-            throw Error("Change rate must be finite")
+            throw Error("Change rate must be finite");
         } else if (value < 0 || value > 1) {
-            throw Error("Change rate must be in the range from 0 to 1 (inclusive)")
+            throw Error("Change rate must be in the range from 0 to 1 (inclusive)");
         } else {
             this._changeRate = value;
         }
