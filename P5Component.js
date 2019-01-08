@@ -4,7 +4,7 @@
 /**
  * This class is the interface between a reusable component and the p5 library, it also proves utilities for making
  * nested components.
- * This method behaves as **abstract** and cannot be instantiated, only inherited from.
+ * This class behaves as **abstract** and cannot be instantiated, only inherited from.
  * [examples.html](/examples.html) for example implementations
  */
 class P5Component {
@@ -125,7 +125,6 @@ class P5Component {
         const originalProto = this.__proto__;
         return function (sketch) {
             component.initPrototype(sketch);
-            P5Component.tryBindGlobals(sketch);
             sketch.setup = component.setup;
             sketch.draw = component.draw;
             sketch.preload = component.preload;
@@ -191,32 +190,6 @@ class P5Component {
         if (!child.isSetup) {
             child.initPrototype(this.sketch);
             child.setup(this);
-        }
-    }
-
-    /**
-     * This method will bind all the globals if they haven't been bound before
-     * @param sketch {p5} the sketch from which the constants and functions should be taken.
-     */
-    static tryBindGlobals(sketch) {
-        // TODO evaluate if binding globals is needed at all
-        if (!P5Component.isGlobalBound) {
-            P5Component.bindGlobals(sketch);
-            P5Component.isGlobalBound = true
-        }
-    }
-
-    /**
-     * This method makes all p5 functions and constants global variables.
-     * @param sketch {p5} the sketch object which should have all the p5 constants in its prototype
-     */
-    static bindGlobals(sketch) {
-        // this code is copied and modified from the p5 library, starting on line 48965
-        const friendlyBindGlobal = sketch._createFriendlyGlobalFunctionBinder();
-        for (const key in sketch.__proto__) {
-            if (sketch.__proto__.hasOwnProperty(key)) {
-                friendlyBindGlobal(key, sketch.__proto__[key]);
-            }
         }
     }
 

@@ -268,6 +268,7 @@ not to force these to be implemented.
 ### Designing the component itself
 
 There are a few features that I want to add to the particle image sketcher:
+
 + Smother drawing graphics (as opposed to the instant line appearing)
     + implemented by making it so that the life of one particle is spread over more frames
 + Customisation of particles attraction force

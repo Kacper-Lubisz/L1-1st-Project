@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+          integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.js"></script>
 
@@ -11,6 +19,7 @@
     <script src="lib/prism.js"></script>
 
     <script src="Particle.js"></script>
+    <script src="ParticleBehaviour.js"></script>
     <script src="P5Component.js"></script>
 
     <script src="ImageSketcher.js"></script>
@@ -18,17 +27,567 @@
     <title>My Project</title>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            new p5(new ImageSketcher("images/test7.png", 700, 700, {
+        let sketcher;
+        $(function () {
 
-            }).generateSeed(), document.getElementById("sketch"))
+            const sketcherEventMakers = {
+                attraction: ImageSketcher.makeEventSimpleAttractiveForce,
+                noise: ImageSketcher.makeEventAddNoiseForce,
+                limitDeath: ImageSketcher.makeEventUpdateLimitDeath,
+                boundsForce: ImageSketcher.makeEventLinearOutOfBoundsForce,
+                distanceDeath: ImageSketcher.makeEventMaxDistanceTraveledDeath,
+                evolve: ImageSketcher.makeEventEvolveColor,
+                boundsDeath: ImageSketcher.makeEventOutOfBoundsDeath
+            };
+            sketcher = new ImageSketcher("images/test7.png", 700, undefined, {});
+            const form = getFormObject();
+
+            new p5(sketcher.generateSeed(), document.getElementById("sketch"), true);
+
+            initForm(form, sketcher);
+            updateFormToSketcher(form, sketcher);
         });
+
+        function initForm(form, sketcher) {
+
+            const getSize = function () {
+                let width = form.width.val().trim();
+                let height = form.height.val().trim();
+
+                width = width === "" || isNaN(Number(width)) ? undefined : Math.floor(Math.max(Number(width), 1));
+                height = height === "" || isNaN(Number(height)) ? undefined : Math.floor(Math.max(Number(height), 1));
+
+                form.width.val(width); // to snap negative values back into range
+                form.height.val(height);
+
+                return {width: width, height: height};
+
+            };
+
+            const simpleNumberValidator = function (min, max, emptyString, willRoundDown, input) {
+                // this is used as a partial function by calling bind on it
+                if (!isNaN(Number(input))) {
+                    let next = input;
+                    if (max !== undefined) {
+                        next = Math.min(input, max)
+                    }
+                    if (min !== undefined) {
+                        next = Math.max(input, min)
+                    }
+                    if (willRoundDown) {
+                        next = Math.floor(next)
+                    }
+                    return next;
+                } else if (input === "") {
+                    return emptyString
+                } else {
+                    return undefined
+                }
+            };
+
+            const makeSimpleNumberOnChangeFunction = function (textField, propertyKey, validator) {
+                return function () {
+                    const value = textField.val();
+                    let next = validator(value);
+
+                    if (next !== undefined) {
+                        textField.val(next);
+                        sketcher[propertyKey] = next;
+                    } else {
+                        textField.val(sketcher[propertyKey]);
+                    }
+                }
+            };
+
+            form.pause.click(function () {
+                sketcher.isStopped = !sketcher.isStopped;
+                form.pause.html(sketcher.isStopped ? "Resume" : "Pause")
+            });
+            form.clear.click(sketcher.forceClear.bind(sketcher));
+            form.reset.click(sketcher.reset.bind(sketcher));
+
+            form.setImage.click(function () {
+                sketcher.targetImageURL = form.imageURL.val();
+                sketcher.forceClear();
+            });
+
+            form.width.change(function () {
+                const {width, height} = getSize();
+                sketcher.setSize(width, height)
+            });
+            form.height.change(function () {
+                const {width, height} = getSize();
+                sketcher.setSize(width, height)
+            });
+
+            form.particleCount.change(makeSimpleNumberOnChangeFunction(
+                form.particleCount,
+                "particleCount",
+                simpleNumberValidator.bind(null, 0, undefined, 0, true) // bind this to null
+            ));
+            form.stepsPerFrame.change(makeSimpleNumberOnChangeFunction(
+                form.stepsPerFrame,
+                "stepsPerFrame",
+                simpleNumberValidator.bind(null, 0, undefined, 0, true)
+            ));
+
+            form.defaultVel.change(function () {
+
+            });
+            form.dampeningFactor.change(makeSimpleNumberOnChangeFunction(
+                form.dampeningFactor,
+                "dampeningFactor",
+                simpleNumberValidator.bind(null, 0, undefined, 0, false)
+            ));
+            form.maxSpeed.change(makeSimpleNumberOnChangeFunction(
+                form.maxSpeed,
+                "maxSpeed",
+                simpleNumberValidator.bind(null, 0, undefined, 0, false)
+            ));
+
+            form.dropRate.change(makeSimpleNumberOnChangeFunction(
+                form.dropRate,
+                "dropRate",
+                simpleNumberValidator.bind(null, 0, 1, 0, false)
+            ));
+            form.dropAlpha.change(makeSimpleNumberOnChangeFunction(
+                form.dropAlpha,
+                "dropAlpha",
+                simpleNumberValidator.bind(null, 0, 255, 0, true)
+            ));
+            form.dropMaxSize.change(makeSimpleNumberOnChangeFunction(
+                form.dropMaxSize,
+                "dropMaxSize",
+                simpleNumberValidator.bind(null, 0, undefined, 0, false)
+            ));
+            form.drawWeight.change(makeSimpleNumberOnChangeFunction(
+                form.drawWeight,
+                "drawWeight",
+                simpleNumberValidator.bind(null, 0, undefined, 0, false)
+            ));
+
+        }
+
+        function getFormObject() {
+            // I didn't do this using a loop through the keys because this makes it work better with my dev tools
+            return {
+                pause: $("#pause"),
+                clear: $("#clear"),
+                reset: $("#reset"),
+
+                imageURL: $("#imageURL"),
+                setImage: $("#setImage"),
+
+                width: $("#width"),
+                height: $("#height"),
+
+                particleCount: $("#particleCount"),
+                stepsPerFrame: $("#stepsPerFrame"),
+
+                defaultVel: $("#defaultVel"),
+                dampeningFactor: $("#dampeningFactor"),
+                maxSpeed: $("#maxSpeed"),
+
+                dropRate: $("#dropRate"),
+                dropAlpha: $("#dropAlpha"),
+                dropMaxSize: $("#dropMaxSize"),
+
+                drawAlpha: $("#drawAlpha"),
+                drawWeight: $("#drawWeight"),
+
+            }
+        }
+
+        function updateFormToSketcher(form, sketcher) {
+            form.imageURL.val(sketcher.targetImageURL);
+
+            form.width.val(sketcher.targetWidth || "");
+            form.height.val(sketcher.targetHeight || "");
+
+            form.particleCount.val(sketcher.particleCount);
+            form.stepsPerFrame.val(sketcher.stepsPerFrame);
+
+
+            form.defaultVel.val(sketcher.defaultVel.x + ", " + sketcher.defaultVel.y);
+            form.dampeningFactor.val(sketcher.dampeningFactor);
+            form.maxSpeed.val(sketcher.maxSpeed);
+
+            form.dropRate.val(sketcher.dropRate);
+            form.dropAlpha.val(sketcher.dropAlpha);
+            form.dropMaxSize.val(sketcher.dropMaxSize);
+
+            form.drawAlpha.val(sketcher.drawAlpha);
+            form.drawWeight.val(sketcher.drawWeight);
+        }
+
     </script>
 
 </head>
 <body>
 <div class="container">
-    <div id="sketch"></div>
+    <h1>Controls</h1>
+
+    <div class="row">
+        <div class="col">
+            <h2>Commands</h2>
+            <hr>
+            <div class="row">
+                <div class="col">
+                    <button id="pause" type="button" class="btn btn-primary btn-block">Pause</button>
+                </div>
+                <div class="col">
+                    <button id="clear" type="button" class="btn btn-danger btn-block">Clear</button>
+                </div>
+                <div class="col ">
+                    <button id="reset" type="button" class="btn btn-danger btn-block">Reset</button>
+                </div>
+            </div>
+
+            <h2>Image, Dimensions and Simulation Speed</h2>
+            <hr>
+            <label for="imageURL"><b>Image URL</b></label>
+            <div class="input-group mb-3">
+                <input id="imageURL" type="text" class="form-control" placeholder="Image URL" aria-label="Image URL">
+                <div class="input-group-append">
+                    <button id="setImage" class="btn btn-outline-danger" type="button">Set</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <label for="width"><b>Width</b></label>
+                    <div class="input-group mb-3">
+                        <input id="width" type="number" class="form-control" placeholder="Auto" aria-label="width">
+                    </div>
+                </div>
+                <div class="col">
+                    <label for="height"><b>Height</b></label>
+                    <div class="input-group mb-3">
+                        <input id="height" type="number" class="form-control" placeholder="Auto" aria-label="height">
+                    </div>
+                </div>
+            </div>
+            <small>
+                If one of width or height is left empty then it will be extrapolated from the aspect ratio of the
+                image, if both are then the size will be copied from the image
+            </small>
+
+            <div class="row">
+                <div class="col">
+                    <label for="particleCount"><b>Number of Particles</b></label>
+                    <div class="input-group mb-3">
+                        <input id="particleCount" type="number" class="form-control" placeholder=""
+                               aria-label="Number of Particles">
+                    </div>
+                </div>
+                <div class="col">
+                    <label for="stepsPerFrame"><b>Updates per frame</b></label>
+                    <div class="input-group mb-3">
+                        <input id="stepsPerFrame" type="number" class="form-control" placeholder=""
+                               aria-label="Updates per frame">
+                    </div>
+                </div>
+            </div>
+            <small>
+                The produce of the number of particles and updates per frame is proportional to the how
+                computationally intensive the task is, if the frame rate drops then reduce this product
+            </small>
+        </div>
+        <div class="col-md-auto shadow p-3 mb-5 bg-white rounded" id="sketch">
+        </div>
+    </div>
+    <div>
+        <h2>Physics and Drawing Settings</h2>
+        <hr>
+
+        <div class="row">
+            <div class="col">
+                <label for="defaultVel"><b>Starting Velocity</b></label>
+                <div class="input-group mb-3">
+                    <input id="defaultVel" type="text" class="form-control" placeholder="e.g '5,5'"
+                           aria-label="Starting Velocity">
+                </div>
+            </div>
+            <div class="col">
+                <label for="dampeningFactor"><b>Speed Dampening</b></label>
+                <div class="input-group mb-3">
+                    <input id="dampeningFactor" type="number" class="form-control" placeholder="e.g 0.99"
+                           aria-label="Speed Dampening">
+                </div>
+            </div>
+            <div class="col">
+                <label for="maxSpeed"><b>Max Speed</b></label>
+                <div class="input-group mb-3">
+                    <input id="maxSpeed" type="number" class="form-control" placeholder="e.g 3"
+                           aria-label="Max Speed">
+                </div>
+            </div>
+        </div>
+        <small>
+            Starting Velocity is obviously the velocity that the particle will start with. It can be invividually
+            assigned by a generator which would override this default. e.g '5,5' meaning 5 pixels per update in each
+            axis. Speed dampening is a factor that is applied to each particles speed at each update, creating an
+            exponential drag force. e.g 0.99. Max speed is the maximum speed that a particle can travel at, if a
+            particle exceeds this speed then the speed will be reduced to the max speed e.g. 3.
+        </small>
+
+        <div class="row">
+            <div class="col">
+                <label for="dropRate"><b>Drop Chance</b></label>
+                <div class="input-group mb-3">
+                    <input id="dropRate" type="number" class="form-control" placeholder="e.g 0.0008"
+                           aria-label="Drop Chance">
+                </div>
+            </div>
+            <div class="col">
+                <label for="dropAlpha"><b>Drop Opacity /255</b></label>
+                <div class="input-group mb-3">
+                    <input id="dropAlpha" type="number" class="form-control" placeholder="e.g 150"
+                           aria-label="Drop Opacity">
+                </div>
+            </div>
+            <div class="col">
+                <label for="dropMaxSize"><b>Max Drop Size</b></label>
+                <div class="input-group mb-3">
+                    <input id="dropMaxSize" type="number" class="form-control" placeholder="e.g 5"
+                           aria-label="Max Drop Size">
+                </div>
+            </div>
+        </div>
+        <small>
+            These parameters are relating to the ink drops that particles can draw. Drop chance is the probability that
+            an ink drop is drawn during any given update e.g 0.0008. Draw opacity is the opacity of the drop e.g. 150.
+            Max drop size is the maximum diameter of the drop (in pixels) e.g 5.
+        </small>
+
+        <div class="row">
+            <div class="col">
+                <label for="drawAlpha"><b>Trace Opacity /255</b></label>
+                <div class="input-group mb-3">
+                    <input id="drawAlpha" type="number" class="form-control" placeholder="e.g 50"
+                           aria-label="Trace Opacity /255">
+                </div>
+            </div>
+            <div class="col">
+                <label for="drawWeight"><b>Trace Width</b></label>
+                <div class="input-group mb-3">
+                    <input id="drawWeight" type="number" class="form-control" placeholder="e.g 1"
+                           aria-label="Trace Width">
+                </div>
+            </div>
+        </div>
+        <small>These properties relate to the trace that the particle leaves behind as it moves e.g '50' and '1'</small>
+
+    </div>
+    <div>
+        <h2>Artsy Settings (Particle Behaviours)</h2>
+        <p>Click any title to be taken to the implementation examples</p>
+        <hr>
+
+        <h3>Simple Attractive Force</h3>
+        <small>
+            This behaviour attracts each particle to the surrounding pixels which have the same color as it. Kernel
+            size is the size of the rectangle(in pixels) which the particle is attracted to. e.g '5' (5x5 pixels) or
+            '4,3' (4x3 pixels). Force Factor is simply a multiplier on the force that is felt by the object. Average
+            attraction means that the particle will experience the average force from all the pixels, this is different
+            to a factor because behaviour changes when a particle is close to the edges of the image.
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="attractionSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="attractionSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col">
+                <div class="col">
+                    <label for="attractionKernelSize"><b>Kernel Size</b></label>
+                    <div class="input-group mb-3">
+                        <input id="attractionKernelSize" type="text" class="form-control" placeholder="e.g '5' or '4,3'"
+                               aria-label="Kernel Size">
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="col">
+                    <label for="attractionForceFactor"><b>Force Factor</b></label>
+                    <div class="input-group mb-3">
+                        <input id="attractionForceFactor" type="text" class="form-control" placeholder="e.g 1"
+                               aria-label="Force Factor">
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <label for="attractionAverage"><b>Average Attraction</b></label>
+                <div class="input-group mb-3">
+                    <button id="attractionAverage" class="btn btn-primary btn-block">Off</button>
+                </div>
+            </div>
+        </div>
+
+        <h3>Noise Force</h3>
+        <small>
+            This behaviour adds random forces to the particles. Noise scale is a factor for the location in noise space
+            (<a href="https://p5js.org/reference/#/p5/noise">see the p5 Perlin noise function</a>). Noise Influence is
+            just a factor on the size of the force that the particle feels. Time factor is how fast noise evolves
+            through time (such that the same force isn't felt in the same place all the time).
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="noiseSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="noiseSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col">
+                <label for="noiseScale"><b>Noise Scale</b></label>
+                <div class="input-group mb-3">
+                    <input id="noiseScale" type="number" class="form-control" placeholder="e.g 0.001"
+                           aria-label="Force Factor">
+                </div>
+            </div>
+            <div class="col">
+                <label for="noiseInfluence"><b>Noise Influence</b></label>
+                <div class="input-group mb-3">
+                    <input id="noiseInfluence" type="number" class="form-control" placeholder="e.g 0.1"
+                           aria-label="Time Factor">
+                </div>
+            </div>
+            <div class="col">
+                <label for="noiseTimeFactor"><b>Time Factor</b></label>
+                <div class="input-group mb-3">
+                    <input id="noiseTimeFactor" type="number" class="form-control" placeholder="e.g 0.02"
+                           aria-label="Time Factor">
+                </div>
+            </div>
+        </div>
+
+        <h3>Update Limit Death</h3>
+        <small>
+            This behaviour makes it so that a particle is replaced after a certain amount of updates (not frames).
+            Maximum updates is the number of updates after which the particle will die, it can be a particular value
+            e.g '100' or can be given as a range which will be sampled from a uniform distribution for each particle
+            e.g '75, 125'.
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="limitDeathSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="limitDeathSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col-9">
+                <label for="limitDeathMaxLife"><b>Maximum Updates</b></label>
+                <div class="input-group mb-3">
+                    <input id="limitDeathMaxLife" type="number" class="form-control" placeholder="e.g '100' or '75,125'"
+                           aria-label="Maximum Updates">
+                </div>
+            </div>
+        </div>
+
+        <h3>Linear Out Of Bounds Force</h3>
+        <small>
+            This behaviour adds a force to the particle when it gets close to the edge of the image. The Bounds
+            parameter is the distance from the edges at which the force will start to be felt. It can be passed as a
+            single number e.g '20' or as 4 numbers which signify the 4 edges, in the order: top, right, bottom, left.
+            e.g '0,20,40,20' The force is interpolated from nothing at the boundary to whatever the value of Force
+            Factor is at the edge.
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="boundsForceSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="boundsForceSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col-6">
+                <label for="boundsForceBounds"><b>Bounds</b></label>
+                <div class="input-group mb-3">
+                    <input id="boundsForceBounds" type="text" class="form-control"
+                           placeholder="e.g '20' or '0,20,40,20'" aria-label="Bounds">
+                </div>
+            </div>
+
+            <div class="col">
+                <label for="boundsForceFactor"><b>Force Factor</b></label>
+                <div class="input-group mb-3">
+                    <input id="boundsForceFactor" type="number" class="form-control" placeholder="e.g 0.25"
+                           aria-label="Force Factor">
+                </div>
+            </div>
+        </div>
+
+        <h3>Max Distance Traveled Death</h3>
+        <small>
+            This behaviour makes it so that a particle dies after a certain distance that it has traveled. Since this
+            check is only applied once per update, it is possible that a fast moving particle will move a substantial
+            distance between updates and move further than the max distance. Max distance (in pixels) can be passed as
+            a single value e.g '20' or can be given as a range which will be sampled from a uniform distribution for
+            each particle e.g '0, 20'
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="distanceDeathSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="distanceDeathSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col-9">
+                <label for="distanceDeathDistance"><b>Max Distance</b></label>
+                <div class="input-group mb-3">
+                    <input id="distanceDeathDistance" type="text" class="form-control"
+                           placeholder="e.g '20' or '0,20'" aria-label="Max Distance">
+                </div>
+            </div>
+        </div>
+
+        <h3>Evolve Color</h3>
+        <small>
+            This behaviour makes it so that a particle changes color to the color of the surrounding pixels. Assuming
+            that the particle doesn't move, it would do so in an exponential manner. Change rate how to weight the
+            average between the existing color and the new color, for example '0.2' means each update will make the
+            color become 20% of the surrounding average color and %80 of the previous color. Kernel size is the size of
+            the rectangle(in pixels) which the particle's color will change to. e.g '5' (5x5 pixels) or '4,3'
+            (4x3 pixels).
+        </small>
+        <div class="row">
+            <div class="col-3">
+                <label for="evolveSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="evolveSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+            <div class="col">
+                <label for="evolveChangeRate"><b>Change Rate</b></label>
+                <div class="input-group mb-3">
+                    <input id="evolveChangeRate" type="number" class="form-control"
+                           placeholder="e.g 0.05" aria-label="Change Rate">
+                </div>
+            </div>
+
+            <div class="col ">
+                <label for="evolveKernelSize"><b>Kernel Size</b></label>
+                <div class="input-group mb-3">
+                    <input id="evolveKernelSize" type="text" class="form-control" placeholder="e.g '3' or '4,3'"
+                           aria-label="Force Factor">
+                </div>
+            </div>
+        </div>
+
+        <h3>Out Of Bounds Death</h3>
+        <small>
+            This behaviour makes it so that when a particle dies when it is outside of the canvas.
+        </small>
+        <div class="row">
+            <div class="col">
+                <label for="boundsForceSwitch"><b>Turn On/Off</b></label>
+                <div class="input-group mb-3">
+                    <button id="boundsDeathSwitch" class="btn btn-primary btn-block">On</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>
