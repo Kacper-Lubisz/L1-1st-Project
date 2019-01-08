@@ -1,11 +1,11 @@
 "use strict";
 
-
 /**
  * This class is the interface between a reusable component and the p5 library, it also proves utilities for making
  * nested components.
  * This class behaves as **abstract** and cannot be instantiated, only inherited from.
  * [examples.html](/examples.html) for example implementations
+ * @abstract
  */
 class P5Component {
 
@@ -89,6 +89,7 @@ class P5Component {
     /**
      * This method is to do any slow setup tasks (computationally intensive or suffering from network latency)
      * This method behaves as **abstract** and must be implemented by a child class.
+     * @abstract
      */
     preload() {
         // abstract method stub
@@ -97,6 +98,7 @@ class P5Component {
     /**
      * This method is called to setup the object after everything has been pre-loaded (e.g. deal with loaded images)
      * This method behaves as **abstract** and must be implemented by a child class.
+     * @abstract
      * @param parent {P5Component} the parent object calling the setup.  `undefined` if the component is the root
      */
     setup(parent) {
@@ -107,6 +109,7 @@ class P5Component {
      * This method draws the component onto the canvas.
      * If this method is called a canvas must be passed.
      * This method behaves as **abstract** and must be implemented by a child class.
+     * @abstract
      * @param canvas {p5} the canvas where the component will be drawn
      * @see p5.redraw
      */
@@ -119,12 +122,13 @@ class P5Component {
      * The seed is a function which adds methods (such as `setup`, `draw` and various listeners) to the p5 sketch object.
      * This method behaves as **final** and cannot be overridden.
      * @return {Function} the seed
+     * @final
      */
     generateSeed() {
         const component = this;
         const originalProto = this.__proto__;
         return function (sketch) {
-            component.initPrototype(sketch);
+            component._initPrototype(sketch);
             sketch.setup = component.setup;
             sketch.draw = component.draw;
             sketch.preload = component.preload;
@@ -165,8 +169,9 @@ class P5Component {
     /**
      * This method manipulates the objects prototype such that it will inherit from the sketch
      * @param sketch {p5} the sketch to inherit form
+     * @private
      */
-    initPrototype(sketch) {
+    _initPrototype(sketch) {
         // This is defiantly abuse of prototypal inheritance.  The main issues I can identify with this other than
 
         this.__proto__ = P5Component.deepClone(this.__proto__);
@@ -188,7 +193,7 @@ class P5Component {
      */
     parentSetup(child) {
         if (!child.isSetup) {
-            child.initPrototype(this.sketch);
+            child._initPrototype(this.sketch);
             child.setup(this);
         }
     }

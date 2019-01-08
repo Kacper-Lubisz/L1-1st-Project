@@ -60,7 +60,7 @@ class ParticleBehaviour {
 class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
 
     /**
-     * Instantiates a new instance of SimpleAttractiveForceBehaviour
+     * Instantiates a new object of SimpleAttractiveForceBehaviour
      * @param kernelSize {Number|Array<Number>} The area near which the particle will be attracted to
      * @param forceFactor {Number} The factor for the force that the particle will feel
      * @param willAverage {Boolean} If the force will be the average of all the pixels that exert a force on it
@@ -68,18 +68,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
     constructor(kernelSize = 5, forceFactor = 1.0, willAverage = false) {
         super();
 
-        if (typeof kernelSize === "number") {
-            this.kernelWidth = kernelSize;
-            this.kernelHeight = kernelSize;
-        } else if (Array.isArray(kernelSize) && kernelSize.length === 2) {
-            [this.kernelWidth, this.kernelHeight] = kernelSize;
-        } else {
-            throw TypeError("kernelSize must be either a number or an Array of length 2")
-        }
-
-        this.kernelWidth /= 2;
-        this.kernelHeight /= 2;
-
+        this.kernelSize = kernelSize; // calls setter and validates
         this.forceFactor = forceFactor;
         this.willAverage = willAverage;
     }
@@ -101,8 +90,13 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
 
         let total = particle.p5.createVector(0, 0);
         let pixels = 0;
-        for (let i = -this.kernelWidth; i <= this.kernelWidth; i++) {
-            for (let j = -this.kernelHeight; j <= this.kernelHeight; j++) {
+
+        const halfWidth = this._kernelWidth / 2;
+        const halfHeight = this._kernelHeight / 2;
+
+        // TODO fix this, it doesn't work for even kernel sizes
+        for (let i = -halfWidth; i <= halfWidth; i++) {
+            for (let j = -halfHeight; j <= halfHeight; j++) {
                 if (i === 0 && j === 0)
                     continue;
 
@@ -125,14 +119,121 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
 
             }
         }
-        // console.log(pixels)
-        if (this.willAverage && pixels !== 0) {
-            particle.force.add(total.mult(this.forceFactor / pixels));
+        if (this._willAverage && pixels !== 0) {
+            particle.force.add(total.mult(this._forceFactor / pixels));
         } else {
-            particle.force.add(total.mult(this.forceFactor));
+            particle.force.add(total.mult(this._forceFactor));
         }
     }
 
+    /**
+     * Returns the force factor
+     * @return {Number} the force factor
+     */
+    get forceFactor() {
+        return this._forceFactor;
+    }
+
+    /**
+     * Sets the force factor
+     * @param value {Number} the new force factor
+     */
+    set forceFactor(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Force factor must be a number")
+        } else if (!Number.isFinite(value)) {
+            throw Error("Force factor must be finite")
+        } else {
+            this._forceFactor = value;
+        }
+    }
+
+    /**
+     * Returns will average
+     * @return {Boolean} will average
+     */
+    get willAverage() {
+        return this._willAverage;
+    }
+
+    /**
+     * Sets if the force will be averaged
+     * @param value {Boolean} new will average
+     */
+    set willAverage(value) {
+        if (typeof value !== "boolean") {
+            throw TypeError("Will average must be a boolean")
+        } else {
+            this._willAverage = value;
+        }
+    }
+
+    /**
+     * Returns the width and height
+     * @return {Number[]} an array with the width and height as the two elements.
+     */
+    get kernelSize() {
+        return [this._kernelWidth, this._kernelHeight];
+    }
+
+    /**
+     * Sets the size of the kernel
+     * @param value {Number|Number[]} the square kernel size or an array with the width and height
+     */
+    set kernelSize(value) {
+        if (typeof value === "number") {
+            this.kernelWidth = value;
+            this.kernelHeight = value;
+        } else if (Array.isArray(value) && value.length === 2) {
+            [this.kernelWidth, this.kernelHeight] = value; // calls the two sub setters
+        } else {
+            throw TypeError("Kernel size must be either a number or an Array of length 2")
+        }
+    }
+
+    /**
+     * Returns the kernel width
+     * @return {Number} the kernel width
+     */
+    get kernelWidth() {
+        return this._kernelWidth;
+    }
+
+    /**
+     * Sets the kernel width
+     * @param value {Number} the new kernel width (an integer)
+     */
+    set kernelWidth(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Kernel width must be a number")
+        } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
+            throw TypeError("Kernel width must be an integer")
+        } else {
+            this._kernelWidth = value;
+        }
+    }
+
+    /**
+     * Returns the kernel height
+     * @return {Number} the kernel height
+     */
+    get kernelHeight() {
+        return this._kernelHeight;
+    }
+
+    /**
+     * Sets the kernel height
+     * @param value {Number} the new kernel height (integer)
+     */
+    set kernelHeight(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Kernel height must be a number")
+        } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
+            throw TypeError("Kernel height must be an integer")
+        } else {
+            this._kernelHeight = value;
+        }
+    }
 }
 
 /**
@@ -140,7 +241,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
  */
 class NoiseForceBehaviour extends ParticleBehaviour {
     /**
-     * Instantiates a new instance of NoiseForceBehaviour
+     * Instantiates a new object of NoiseForceBehaviour
      * @param noiseScale {Number} The factor for the location in noise space
      * @param noiseInfluence {Number} The factor on the size of the force that the particle feels
      * @param timeFactor {Number} The factor is how fast noise evolves through time
@@ -148,11 +249,18 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      */
     constructor(noiseScale = .001, noiseInfluence = 0.05, timeFactor = 0.01, noiseTimeOffset = Math.random()) {
         super();
-        this._noiseScale = noiseScale;
-        this._noiseInfluence = noiseInfluence;
-        this._timeFactor = timeFactor;
 
-        this._noiseTimeOffset = noiseTimeOffset;
+        this.noiseScale = noiseScale; // calls setter and validates
+        this.noiseInfluence = noiseInfluence;
+        this.timeFactor = timeFactor;
+
+        if (typeof noiseTimeOffset !== "number") {
+            throw TypeError("Noise time offset must be a number")
+        } else if (!Number.isFinite(noiseTimeOffset)) {
+            throw TypeError("Noise time offset must be finite")
+        } else {
+            this._noiseTimeOffset = noiseTimeOffset;
+        }
 
         this._updateCount = 0;
 
@@ -195,7 +303,13 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      * @param value {Number} the new noise scale
      */
     set noiseScale(value) {
-        this._noiseScale = value;
+        if (typeof value !== "number") {
+            throw TypeError("Noise scale must be a number")
+        } else if (!Number.isFinite(value)) {
+            throw Error("Noise scale must be finite")
+        } else {
+            this._noiseScale = value;
+        }
     }
 
     /**
@@ -208,10 +322,16 @@ class NoiseForceBehaviour extends ParticleBehaviour {
 
     /**
      * Sets the new noise influence
-     * @param value the new for noise influence
+     * @param value {Number} the new for noise influence
      */
     set noiseInfluence(value) {
-        this._noiseInfluence = value;
+        if (typeof value !== "number") {
+            throw TypeError("Noise influence must be a number")
+        } else if (!Number.isFinite(value)) {
+            throw Error("Noise influence must be finite")
+        } else {
+            this._noiseInfluence = value;
+        }
     }
 
     /**
@@ -227,7 +347,13 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      * @param value {Number} the new time factor
      */
     set timeFactor(value) {
-        this._timeFactor = value;
+        if (typeof value !== "number") {
+            throw TypeError("Time factor must be a number")
+        } else if (!Number.isFinite(value)) {
+            throw Error("Time factor must be finite")
+        } else {
+            this._timeFactor = value;
+        }
     }
 
 }
@@ -238,19 +364,15 @@ class NoiseForceBehaviour extends ParticleBehaviour {
 class UpdateLimitDeathBehaviour extends ParticleBehaviour {
 
     /**
-     * Instantiates a new instance of UpdateLimitDeathBehaviour
-     * @param maxLife {Number | Function} The number of updates or a function which returns the number of updates
+     * Instantiates a new object of UpdateLimitDeathBehaviour
+     * @param maxLife {Number|Function} The number of updates or a function which returns the number of updates
      */
     constructor(maxLife) {
         super();
 
         this._updatesLived = new Map();
         this._max = new Map();
-        this._maxLife = maxLife;
-
-        if (typeof this._maxLife !== "function" && typeof this._maxLife !== "number") {
-            throw TypeError("maxLife must either be a number or a function which returns a number")
-        }
+        this.maxLife = maxLife; // calls setter and validates
 
     }
 
@@ -283,7 +405,15 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
             this._updatesLived.set(particle, 1);
 
             if (typeof this._maxLife === "function") {
-                this._max.set(particle, this._maxLife(particle));
+                const updates = this._maxLife(particle);
+                if (typeof updates !== "number") {
+                    throw TypeError("The max updates function must return a number")
+                } else if (!Number.isFinite(updates)) {
+                    throw TypeError("The max updates function must return a finite number")
+                } else {
+                    this._max.set(particle, updates);
+                }
+
             } else {
                 this._max.set(particle, this._maxLife);
             }
@@ -299,6 +429,26 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
             particle.isAlive = false;
         }
     }
+
+    /**
+     * Returns max life
+     * @return {Number|Function} max life, the number or a function which maps a particle to it
+     */
+    get maxLife() {
+        return this._maxLife;
+    }
+
+    /**
+     * Sets max life
+     * @param value {Number|Function} the new value of max life
+     */
+    set maxLife(value) {
+        if (typeof value !== "function" && typeof value !== "number") {
+            throw TypeError("MaxLife must either be a number or a function which returns a number")
+        } else {
+            this._maxLife = value;
+        }
+    }
 }
 
 /**
@@ -308,8 +458,8 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
 class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
 
     /**
-     * Instantiates a new instance of LinearOutOfBoundsForceBehaviour
-     * @param bounds {Number | Object} the number distance from the edges or an object with the keys 'top', 'right',
+     * Instantiates a new object of LinearOutOfBoundsForceBehaviour
+     * @param bounds {Number|Object} the number distance from the edges or an object with the keys 'top', 'right',
      * 'bottom' and or 'left'
      * @param boundForceFactor {Number} The magnitude of the max force on the particle
      */
@@ -373,17 +523,21 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
     }
 }
 
+/**
+ *This particle behaviour makes it so that a particle dies after it has traveled a certain distance.
+ */
 class MaxDistanceTraveledDeath extends ParticleBehaviour {
+    /**
+     * Instantiates a new object of MaxDistanceTraveledDeath
+     * @param maxDistance {Number|Function}  The distance number or a function which returns the distance
+     */
     constructor(maxDistance) {
         super();
 
         this.distanceTraveled = new Map();
         this.max = new Map();
-        this.maxDistance = maxDistance;
 
-        if (typeof maxDistance !== "function" && typeof maxDistance !== "number") {
-            throw TypeError("maxDistance must either be a number or a function which returns a number")
-        }
+        this.maxDistance = maxDistance;
 
     }
 
@@ -415,10 +569,17 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
         if (this.distanceTraveled.get(particle) === undefined) {
             this.distanceTraveled.set(particle, distance);
 
-            if (typeof this.maxDistance === "function") {
-                this.max.set(particle, this.maxDistance(particle));
+            if (typeof this._maxDistance === "function") {
+                const distance = this._maxDistance(particle);
+                if (typeof distance !== "number") {
+                    throw TypeError("The max distance function must return a number")
+                } else if (!Number.isFinite(distance)) {
+                    throw TypeError("The max distance function must return a finite number")
+                } else {
+                    this.max.set(particle, distance);
+                }
             } else {
-                this.max.set(particle, this.maxDistance);
+                this.max.set(particle, this._maxDistance);
             }
 
         } else {
@@ -432,25 +593,45 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
             particle.isAlive = false;
         }
     }
+
+    /**
+     * Returns the max distance number or function
+     * @return {Number|Function} max number or function
+     */
+    get maxDistance() {
+        return this._maxDistance;
+    }
+
+    /**
+     * Sets the max number or function
+     * @param value {Number|Function} the maximum distance or a function which returns the maximum distance
+     */
+    set maxDistance(value) {
+        if (typeof value !== "function" && typeof value !== "number") {
+            throw TypeError("maxDistance must either be a number or a function which returns a number")
+        } else {
+            this._maxDistance = value;
+        }
+    }
 }
 
+/**
+ * This particle behaviour makes it so that the particle adopts the color of the pixels in the surrounding area.  The
+ * change is exponential by the change rate factor and in the area specified by kernel size.
+ */
 class EvolveColorBehaviour extends ParticleBehaviour {
 
+    /**
+     * Instantiates a new object of EvolveColorBehaviour
+     * @param changeRate {Number} the exponential change factor of how fast a particle's color should change
+     * @param kernelSize {Number|Number[]} the square size of the area of affect or an array of length 2 containing the
+     * width and height
+     */
     constructor(changeRate = 0.005, kernelSize = 3) {
         super();
 
-        this.changeRate = changeRate;
-        if (typeof kernelSize === "number") {
-            this.kernelWidth = kernelSize;
-            this.kernelHeight = kernelSize;
-        } else if (Array.isArray(kernelSize) && kernelSize.length === 2) {
-            [this.kernelWidth, this.kernelHeight] = kernelSize;
-        } else {
-            throw TypeError("kernelSize must be either a number or an Array of length 2")
-        }
-
-        this.kernelWidth /= 2; // this is so that it only needs to be divided once.
-        this.kernelHeight /= 2;
+        this.kernelSize = kernelSize; // validated in setters
+        this.changeRate = changeRate; // validated in setters
 
     }
 
@@ -469,8 +650,12 @@ class EvolveColorBehaviour extends ParticleBehaviour {
      */
     updateParticle(particle) {
         let totals = {r: 0, g: 0, b: 0, count: 0};
-        for (let x = Math.round(particle.pos.x - this.kernelWidth); x < particle.pos.x + this.kernelWidth; x++) {
-            for (let y = Math.round(particle.pos.y - this.kernelHeight); y < particle.pos.y + this.kernelHeight; y++) {
+        const halfWidth = this._kernelWidth / 2;
+        const halfHeight = this._kernelHeight / 2;
+
+        // TODO do extra tests on this
+        for (let x = Math.round(particle.pos.x - halfWidth); x < particle.pos.x + halfWidth; x++) {
+            for (let y = Math.round(particle.pos.y - halfHeight); y < particle.pos.y + halfHeight; y++) {
 
                 if (x > 0 && y > 0 && x < particle.img.width && y < particle.img.height) {
                     const color = particle.sketcher.getColor(particle.img, x, y);
@@ -488,16 +673,114 @@ class EvolveColorBehaviour extends ParticleBehaviour {
         };
         if (totals.count !== 0) {
             particle.color = particle.p5.color(
-                (1 - this.changeRate) * particle.color.levels[0] + this.changeRate * averageColor.r,
-                (1 - this.changeRate) * particle.color.levels[1] + this.changeRate * averageColor.g,
-                (1 - this.changeRate) * particle.color.levels[2] + this.changeRate * averageColor.b,
+                (1 - this._changeRate) * particle.color.levels[0] + this._changeRate * averageColor.r,
+                (1 - this._changeRate) * particle.color.levels[1] + this._changeRate * averageColor.g,
+                (1 - this._changeRate) * particle.color.levels[2] + this._changeRate * averageColor.b,
                 particle.color.levels[3]
             )
         }
     }
+
+    /**
+     * Returns the width and height
+     * @return {Number[]} an array with the width and height as the two elements.
+     */
+    get kernelSize() {
+        return [this._kernelWidth, this._kernelHeight];
+    }
+
+    /**
+     * Sets the size of the kernel
+     * @param value {Number|Number[]} the square kernel size or an array with the width and height
+     */
+    set kernelSize(value) {
+        if (typeof value === "number") {
+            this.kernelWidth = value;
+            this.kernelHeight = value;
+        } else if (Array.isArray(value) && value.length === 2) {
+            [this.kernelWidth, this.kernelHeight] = value; // calls the two sub setters
+        } else {
+            throw TypeError("Kernel size must be either a number or an Array of length 2")
+        }
+    }
+
+    /**
+     * Returns the kernel width
+     * @return {Number} the kernel width
+     */
+    get kernelWidth() {
+        return this._kernelWidth;
+    }
+
+    /**
+     * Sets the kernel width
+     * @param value {Number} the new kernel width (an integer)
+     */
+    set kernelWidth(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Kernel width must be a number")
+        } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
+            throw TypeError("Kernel width must be an integer")
+        } else {
+            this._kernelWidth = value;
+        }
+    }
+
+    /**
+     * Returns the kernel height
+     * @return {Number} the kernel height
+     */
+    get kernelHeight() {
+        return this._kernelHeight;
+    }
+
+    /**
+     * Sets the kernel height
+     * @param value {Number} the new kernel height (integer)
+     */
+    set kernelHeight(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Kernel height must be a number")
+        } else if (!Number.isInteger(value) || !Number.isFinite(value)) {
+            throw TypeError("Kernel height must be an integer")
+        } else {
+            this._kernelHeight = value;
+        }
+    }
+
+    /**
+     * Returns the change rate
+     * @return {Number} the change rate
+     */
+    get changeRate() {
+        return this._changeRate;
+    }
+
+    /**
+     * Sets the change rate
+     * @param value {Number} the new change rate
+     */
+    set changeRate(value) {
+        if (typeof value !== "number") {
+            throw TypeError("Change rate must be a number")
+        } else if (!Number.isFinite(value)) {
+            throw Error("Change rate must be finite")
+        } else if (value < 0 || value > 1) {
+            throw Error("Change rate must be in the range from 0 to 1 (inclusive)")
+        } else {
+            this._changeRate = value;
+        }
+    }
+
 }
 
+/**
+ * This behaviour makes it so that a particle dies when it goes outside of the image
+ */
 class OutOfBoundsDeathBehaviour extends ParticleBehaviour {
+    /**
+     * Instantiates a new object of OutOfBoundsDeathBehaviour
+     */
     constructor() {
         super();
     }
