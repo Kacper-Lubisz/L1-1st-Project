@@ -6,8 +6,9 @@ class ParticleBehaviour {
     /**
      * Instantiates a new ParticleBehaviour, ensures that all the abstract methods are implemented and makes sure that
      * the constructor is being called from within the constructor or another class (super class).
+     * @param startActive {Boolean} if the behaviour is active
      */
-    constructor() {
+    constructor(startActive = true) {
         // this block emulates an abstract class
         if (this.constructor === ParticleBehaviour) {
             throw new TypeError('Abstract class "p5Component" cannot be instantiated directly.');
@@ -33,6 +34,8 @@ class ParticleBehaviour {
             }
         }
 
+        this._isActive = startActive;
+
     }
 
     /**
@@ -51,6 +54,25 @@ class ParticleBehaviour {
     updateParticle(particle) {
     }
 
+    /**
+     * Returns if the behaviour is active
+     * @return {Boolean}
+     */
+    get isActive() {
+        return this._isActive;
+    }
+
+    /**
+     * Sets if the behaviour is active
+     * @param value {Boolean} new active boolean
+     */
+    set isActive(value) {
+        if (typeof value !== "boolean") {
+            throw TypeError("Is active must be a booleans");
+        } else {
+            this._isActive = value;
+        }
+    }
 }
 
 /**
@@ -66,7 +88,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
      * @param willAverage {Boolean} If the force will be the average of all the pixels that exert a force on it
      */
     constructor(kernelSize = 5, forceFactor = 1.0, willAverage = false) {
-        super();
+        super(true);
 
         this.kernelSize = kernelSize; // calls setter and validates
         this.forceFactor = forceFactor;
@@ -248,7 +270,7 @@ class NoiseForceBehaviour extends ParticleBehaviour {
      * @param noiseTimeOffset {Number} The offset to the noise, used to make each instance of ImageSketcher unique
      */
     constructor(noiseScale = .001, noiseInfluence = 0.05, timeFactor = 0.01, noiseTimeOffset = Math.random()) {
-        super();
+        super(true);
 
         this.noiseScale = noiseScale; // calls setter and validates
         this.noiseInfluence = noiseInfluence;
@@ -368,7 +390,7 @@ class UpdateLimitDeathBehaviour extends ParticleBehaviour {
      * @param maxLife {Number|Function} The number of updates or a function which returns the number of updates
      */
     constructor(maxLife = 100) {
-        super();
+        super(true);
 
         this._updatesLived = new Map();
         this._max = new Map();
@@ -464,7 +486,7 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
      * @param forceFactor {Number} The magnitude of the max force on the particle
      */
     constructor(bounds = 20, forceFactor = 0.25) {
-        super();
+        super(true);
 
         this._top = 0;
         this._right = 0;
@@ -642,7 +664,7 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
      * @param maxDistance {Number|Function}  The distance number or a function which returns the distance
      */
     constructor(maxDistance = 50) {
-        super();
+        super(false);
 
         this.distanceTraveled = new Map();
         this.max = new Map();
@@ -738,7 +760,7 @@ class EvolveColorBehaviour extends ParticleBehaviour {
      * width and height
      */
     constructor(changeRate = 0.005, kernelSize = 3) {
-        super();
+        super(false);
 
         this.kernelSize = kernelSize; // validated in setters
         this.changeRate = changeRate; // validated in setters
@@ -892,7 +914,7 @@ class OutOfBoundsDeathBehaviour extends ParticleBehaviour {
      * Instantiates a new object of OutOfBoundsDeathBehaviour
      */
     constructor() {
-        super();
+        super(false);
     }
 
     /**

@@ -133,7 +133,9 @@ class Particle {
         this._force.mult(0);
 
         for (let i = 0; i < this.sketcher.particleBehaviours.length; i++) {
-            this.sketcher.particleBehaviours[i].updateParticle(this);
+            if (this.sketcher.particleBehaviours[i].isActive) {
+                this.sketcher.particleBehaviours[i].updateParticle(this);
+            }
         }
 
         this._vel.add(this._force); // force should really be replaced with impulse

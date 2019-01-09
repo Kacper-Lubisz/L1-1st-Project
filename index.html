@@ -27,8 +27,173 @@
     <title>My Project</title>
 
     <script>
+
+        function getSize() {
+            const $width = $("#width");
+            const $height = $("#height");
+
+            let width = $width.val().trim();
+            let height = $height.val().trim();
+
+            width = width === "" || isNaN(Number(width)) ? undefined : Math.floor(Math.max(Number(width), 1));
+            height = height === "" || isNaN(Number(height)) ? undefined : Math.floor(Math.max(Number(height), 1));
+
+            $width.val(width); // to snap negative values back into range
+            $height.val(height);
+
+            return {width: width, height: height};
+
+        }
+
+        /**
+         * Simple data class used for automating the form.
+         */
+        class ToggleButton {
+            constructor(DOMId, trueLabel, falseLabel, getter, setter) {
+                this.DOMElement = $("#" + DOMId);
+                this.trueLabel = trueLabel;
+                this.falseLabel = falseLabel;
+                this.getter = getter;
+                this.setter = setter;
+            }
+
+            updateForm() {
+                this.DOMElement.text(this.getter() ? this.trueLabel : this.falseLabel);
+            }
+
+            initForm() {
+                const field = this;
+                this.DOMElement.click(function () {
+                    field.setter(!field.getter());
+                    field.DOMElement.text(field.getter() ? field.trueLabel : field.falseLabel);
+                });
+            }
+        }
+
+        /**
+         * This is another simple data class for storing the properties of numeric fields
+         */
+        class NumericField {
+            constructor(DOMId, minValue, maxValue, roundDown, emptyString, getter, setter) {
+                this.DOMElement = $("#" + DOMId);
+                this.maxValue = maxValue;
+                this.minValue = minValue;
+                this.roundDown = roundDown;
+                this.emptyString = emptyString;
+                this.getter = getter;
+                this.setter = setter;
+            }
+
+            updateForm() {
+                this.DOMElement.val(this.getter());
+            }
+
+            initForm() {
+                const field = this;
+                this.DOMElement.change(function () {
+                    let value = field.DOMElement.val();
+                    let next;
+                    if (value === "") {
+                        next = field.emptyString;
+                    } else if (Number.isFinite(Number(value))) {
+                        next = Number(value);
+                        if (field.maxValue !== undefined) {
+                            next = Math.min(next, field.maxValue);
+                        }
+                        if (field.minValue !== undefined) {
+                            next = Math.max(next, field.minValue);
+                        }
+                        if (field.roundDown) {
+                            next = Math.floor(next);
+                        }
+                    } else {
+                        next = undefined;
+                    }
+
+                    if (next !== undefined) {
+                        field.DOMElement.val(next);
+                        field.setter(next);
+                    } else {
+                        field.DOMElement.val(field.getter());
+                    }
+                });
+            }
+        }
+
+        class VectorField {
+            constructor(DOMId, minValue, maxValue, roundDown, emptyString, dimensions, numberToValue, arrayToValue, makeString, getter, setter) {
+                this.DOMElement = $("#" + DOMId);
+                this.maxValue = maxValue;
+                this.minValue = minValue;
+                this.roundDown = roundDown;
+                this.emptyString = emptyString;
+                this.dimensions = dimensions;
+                this.numberToValue = numberToValue;
+                this.arrayToValue = arrayToValue;
+                this.makeString = makeString;
+                this.getter = getter;
+                this.setter = setter;
+            }
+
+            updateForm() {
+                this.DOMElement.val(this.makeString(this.getter()));
+            }
+
+            initForm() {
+                const field = this;
+                this.DOMElement.change(function () {
+                    let value = field.DOMElement.val();
+                    let next;
+
+                    if (value === "") {
+                        next = field.DOMElement.emptyString;
+                    }
+                    const sections = value.split(",");
+                    if (sections.length === field.dimensions ||
+                        field.numberToValue !== undefined &&
+                        sections.length === 1 &&
+                        Number.isFinite(Number(sections[0]))) {
+                        for (let i = 0; i < sections.length; i++) {
+                            if (!Number.isFinite(Number(sections[i]))) {
+                                next = undefined;
+                                break;
+                            } else {
+                                sections[i] = Number(sections[i]);
+                                if (field.maxValue !== undefined) {
+                                    sections[i] = Math.min(sections[i], field.maxValue);
+                                }
+                                if (field.minValue !== undefined) {
+                                    sections[i] = Math.max(sections[i], field.minValue);
+                                }
+                                if (field.roundDown) {
+                                    sections[i] = Math.floor(sections[i]);
+                                }
+                            }
+                        }
+                        if (sections.length === 1) {
+                            next = field.numberToValue(sections[0]);
+                        } else {
+                            next = field.arrayToValue(sections);
+                        }
+                    } else {
+                        next = undefined;
+                    }
+
+                    if (next !== undefined) {
+                        field.DOMElement.val(field.makeString(next));
+                        field.setter(next);
+                    } else {
+                        field.DOMElement.val(field.makeString(field.getter()));
+                    }
+
+                });
+            }
+        }
+
+        let fields;
         let sketcher;
         let behaviours;
+
         $(function () {
 
             behaviours = {
@@ -40,107 +205,146 @@
                 evolve: new EvolveColorBehaviour(),
                 boundsDeath: new OutOfBoundsDeathBehaviour()
             };
+
+            fields = [
+                new ToggleButton("pause", "Resume", "Pause",
+                    () => sketcher.isStopped,
+                    (value) => sketcher.isStopped = value),
+                new ToggleButton("attractionSwitch", "On", "Off",
+                    () => behaviours.attraction.isActive,
+                    (value) => behaviours.attraction.isActive = value),
+                new ToggleButton("attractionAverage", "On", "Off",
+                    () => behaviours.attraction.willAverage,
+                    (value) => behaviours.attraction.willAverage = value),
+                new ToggleButton("noiseSwitch", "On", "Off",
+                    () => behaviours.noise.isActive,
+                    (value) => behaviours.noise.isActive = value),
+                new ToggleButton("limitDeathSwitch", "On", "Off",
+                    () => behaviours.limitDeath.isActive,
+                    (value) => behaviours.limitDeath.isActive = value),
+                new ToggleButton("boundsForceSwitch", "On", "Off",
+                    () => behaviours.boundsForce.isActive,
+                    (value) => behaviours.boundsForce.isActive = value),
+                new ToggleButton("distanceDeathSwitch", "On", "Off",
+                    () => behaviours.distanceDeath.isActive,
+                    (value) => behaviours.distanceDeath.isActive = value),
+                new ToggleButton("evolveSwitch", "On", "Off",
+                    () => behaviours.evolve.isActive,
+                    (value) => behaviours.evolve.isActive = value),
+                new ToggleButton("boundsDeathSwitch", "On", "Off",
+                    () => behaviours.boundsDeath.isActive,
+                    (value) => behaviours.boundsDeath.isActive = value),
+
+                new NumericField("particleCount", 0, undefined, true, 0,
+                    () => sketcher.particleCount,
+                    (value) => sketcher.particleCount = value),
+                new NumericField("stepsPerFrame", 0, undefined, true, 0,
+                    () => sketcher.stepsPerFrame,
+                    (value) => sketcher.stepsPerFrame = value),
+                new NumericField("dampeningFactor", 0, undefined, false, 0,
+                    () => sketcher.dampeningFactor,
+                    (value) => sketcher.dampeningFactor = value),
+                new NumericField("maxSpeed", 0, undefined, false, 0,
+                    () => sketcher.maxSpeed,
+                    (value) => sketcher.maxSpeed = value),
+                new NumericField("dropRate", 0, 1, false, 0,
+                    () => sketcher.dropRate,
+                    (value) => sketcher.dropRate = value),
+                new NumericField("dropAlpha", 0, 255, true, 0,
+                    () => sketcher.dropAlpha,
+                    (value) => sketcher.dropAlpha = value),
+                new NumericField("dropMaxSize", 0, undefined, false, 0,
+                    () => sketcher.dropMaxSize,
+                    (value) => sketcher.dropMaxSize = value),
+                new NumericField("drawAlpha", 0, 255, true, 0,
+                    () => sketcher.drawAlpha,
+                    (value) => sketcher.drawAlpha = value),
+                new NumericField("drawWeight", 0, undefined, false, 0,
+                    () => sketcher.drawWeight,
+                    (value) => sketcher.drawWeight = value),
+                new NumericField("attractionForceFactor", undefined, undefined, false, 0,
+                    () => behaviours.attraction.forceFactor,
+                    (value) => behaviours.attraction.forceFactor = value),
+                new NumericField("noiseScale", undefined, undefined, false, 0,
+                    () => behaviours.noise.noiseScale,
+                    (value) => behaviours.noise.noiseScale = value),
+                new NumericField("noiseInfluence", undefined, undefined, false, 0,
+                    () => behaviours.noise.noiseScale,
+                    (value) => behaviours.noise.noiseScale = value),
+                new NumericField("noiseTimeFactor", 0, undefined, false, 0,
+                    () => behaviours.noise.timeFactor,
+                    (value) => behaviours.noise.timeFactor = value),
+                new NumericField("boundsForceFactor", undefined, undefined, false, 0,
+                    () => behaviours.boundsForce.forceFactor,
+                    (value) => behaviours.boundsForce.forceFactor = value),
+                new NumericField("evolveChangeRate", undefined, undefined, false, 0,
+                    () => behaviours.evolve.changeRate,
+                    (value) => behaviours.evolve.changeRate = value),
+
+                new VectorField("defaultVel", undefined, undefined, false, "0, 0", 2,
+                    undefined,
+                    (array) => sketcher.createVector(array[0], array[1]),
+                    (vector) => vector.x + ", " + vector.y,
+                    () => sketcher.defaultVel,
+                    (value) => sketcher.defaulVel = value
+                ),
+                new VectorField("attractionKernelSize", 0, undefined, true, "5, 5", 2,
+                    (number) => [number, number],
+                    (array) => array,
+                    (vector) => vector[0] + ", " + vector[1],
+                    () => behaviours.attraction.kernelSize,
+                    (value) => behaviours.attraction.kernelSize = value
+                ),
+                new VectorField("evolveKernelSize", 0, undefined, true, "3, 3", 2,
+                    (number) => [number, number],
+                    (array) => array,
+                    (vector) => vector[0] + ", " + vector[1],
+                    () => behaviours.evolve.kernelSize,
+                    (value) => behaviours.evolve.kernelSize = value
+                )
+                // $("#boundsForceBounds"),
+                // $("#limitDeathMaxLife"),
+                // $("#distanceDeathDistance")
+            ];
+
             sketcher = new ImageSketcher("images/test7.png", 700, undefined, {
-                particleBehaviours: [
-                    behaviours.attraction,
-                    behaviours.noise,
-                    behaviours.limitDeath,
-                    behaviours.boundsForce,
-                ]
+                particleBehaviours: Object.values(behaviours)
             });
-            const form = getFormObject();
 
             new p5(sketcher.generateSeed(), document.getElementById("sketch"), true);
 
-            initForm(form, sketcher);
-            updateFormToSketcher(form, sketcher);
+            initForm(sketcher);
+            updateFormToSketcher(sketcher);
         });
 
-        function initForm(form, sketcher) {
+        function initForm(sketcher) {
 
-            const getSize = function () {
-                let width = form.width.val().trim();
-                let height = form.height.val().trim();
-
-                width = width === "" || isNaN(Number(width)) ? undefined : Math.floor(Math.max(Number(width), 1));
-                height = height === "" || isNaN(Number(height)) ? undefined : Math.floor(Math.max(Number(height), 1));
-
-                form.width.val(width); // to snap negative values back into range
-                form.height.val(height);
-
-                return {width: width, height: height};
-
-            };
-
-            const simpleNumberValidator = function (min, max, emptyString, willRoundDown, input) {
-                // this is used as a partial function by calling bind on it
-                if (!isNaN(Number(input))) {
-                    let next = input;
-                    if (max !== undefined) {
-                        next = Math.min(input, max);
-                    }
-                    if (min !== undefined) {
-                        next = Math.max(input, min);
-                    }
-                    if (willRoundDown) {
-                        next = Math.floor(next);
-                    }
-                    return next;
-                } else if (input === "") {
-                    return emptyString;
-                } else {
-                    return undefined;
-                }
-            };
-
-            const makeSimpleNumberOnChangeFunction = function (textField, propertyKey, validator) {
-                return function () {
-                    const value = textField.val();
-                    let next = validator(value);
-
-                    if (next !== undefined) {
-                        textField.val(next);
-                        sketcher[propertyKey] = next;
-                    } else {
-                        textField.val(sketcher[propertyKey]);
-                    }
-                };
-            };
-
-            form.pause.click(function () {
-                sketcher.isStopped = !sketcher.isStopped;
-                form.pause.html(sketcher.isStopped ? "Resume" : "Pause");
+            fields.forEach(function (field) {
+                field.initForm()
             });
-            form.clear.click(sketcher.forceClear.bind(sketcher));
-            form.reset.click(sketcher.reset.bind(sketcher));
 
-            form.setImage.click(function () {
-                sketcher.targetImageURL = form.imageURL.val();
+            $("#clear").click(sketcher.forceClear.bind(sketcher));
+            $("#reset").click(sketcher.reset.bind(sketcher));
+
+            $("#setImage").click(function () {
+                sketcher.targetImageURL = $("#imageURL").val();
                 sketcher.forceClear();
             });
 
-            form.width.change(function () {
+            $("#width").change(function () {
                 const {width, height} = getSize();
                 sketcher.setSize(width, height);
+                sketcher.reset();
             });
-            form.height.change(function () {
+            $("#height").change(function () {
                 const {width, height} = getSize();
-                sketcher.setSize(...getSize());
+                sketcher.setSize(width, height);
+                sketcher.reset();
             });
 
-            form.particleCount.change(makeSimpleNumberOnChangeFunction(
-                form.particleCount,
-                "particleCount",
-                simpleNumberValidator.bind(null, 0, undefined, 0, true) // bind this to null
-            ));
-            form.stepsPerFrame.change(makeSimpleNumberOnChangeFunction(
-                form.stepsPerFrame,
-                "stepsPerFrame",
-                simpleNumberValidator.bind(null, 0, undefined, 0, true)
-            ));
-
-            form.defaultVel.change(function () {
-                const value = form.defaultVel.val();
+            $("#defaultVel").change(function () {
+                const $defaultVel = $("#defaultVel");
+                const value = $defaultVel.val();
 
                 let next;
                 const sections = value.split(",");
@@ -155,157 +359,26 @@
                     }
                 }
                 if (next !== undefined) {
-                    form.defaultVel.val(next.x + "," + next.y);
+                    $defaultVel.val(next.x + "," + next.y);
                     sketcher.defaultVel = next;
                 } else {
-                    form.defaultVel.val(sketcher.defaultVel.x + "," + sketcher.defaultVel.y);
+                    $defaultVel.val(sketcher.defaultVel.x + "," + sketcher.defaultVel.y);
                 }
 
             });
-            form.dampeningFactor.change(makeSimpleNumberOnChangeFunction(
-                form.dampeningFactor,
-                "dampeningFactor",
-                simpleNumberValidator.bind(null, 0, undefined, 0, false)
-            ));
-            form.maxSpeed.change(makeSimpleNumberOnChangeFunction(
-                form.maxSpeed,
-                "maxSpeed",
-                simpleNumberValidator.bind(null, 0, undefined, 0, false)
-            ));
-
-            form.dropRate.change(makeSimpleNumberOnChangeFunction(
-                form.dropRate,
-                "dropRate",
-                simpleNumberValidator.bind(null, 0, 1, 0, false)
-            ));
-            form.dropAlpha.change(makeSimpleNumberOnChangeFunction(
-                form.dropAlpha,
-                "dropAlpha",
-                simpleNumberValidator.bind(null, 0, 255, 0, true)
-            ));
-            form.dropMaxSize.change(makeSimpleNumberOnChangeFunction(
-                form.dropMaxSize,
-                "dropMaxSize",
-                simpleNumberValidator.bind(null, 0, undefined, 0, false)
-            ));
-            form.drawWeight.change(makeSimpleNumberOnChangeFunction(
-                form.drawWeight,
-                "drawWeight",
-                simpleNumberValidator.bind(null, 0, undefined, 0, false)
-            ));
 
         }
 
-        function getFormObject() {
-            // I didn't do this using a loop through the keys because this makes it work better with my dev tools
-            return {
-                pause: $("#pause"),
-                clear: $("#clear"),
-                reset: $("#reset"),
+        function updateFormToSketcher(sketcher) {
 
-                imageURL: $("#imageURL"),
-                setImage: $("#setImage"),
+            fields.forEach(function (field) {
+                field.updateForm(sketcher);
+            });
 
-                width: $("#width"),
-                height: $("#height"),
+            $("#imageURL").val(sketcher.targetImageURL);
 
-                particleCount: $("#particleCount"),
-                stepsPerFrame: $("#stepsPerFrame"),
-
-                defaultVel: $("#defaultVel"),
-                dampeningFactor: $("#dampeningFactor"),
-                maxSpeed: $("#maxSpeed"),
-
-                dropRate: $("#dropRate"),
-                dropAlpha: $("#dropAlpha"),
-                dropMaxSize: $("#dropMaxSize"),
-
-                drawAlpha: $("#drawAlpha"),
-                drawWeight: $("#drawWeight"),
-
-                attractionSwitch: $("#attractionSwitch"),
-                attractionKernelSize: $("#attractionKernelSize"),
-                attractionForceFactor: $("#attractionForceFactor"),
-                attractionAverage: $("#attractionAverage"),
-
-                noiseSwitch: $("#noiseSwitch"),
-                noiseScale: $("#noiseScale"),
-                noiseInfluence: $("#noiseInfluence"),
-                noiseTimeFactor: $("#noiseTimeFactor"),
-
-                limitDeathSwitch: $("#limitDeathSwitch"),
-                limitDeathMaxLife: $("#limitDeathMaxLife"),
-
-                boundsForceSwitch: $("#boundsForceSwitch"),
-                boundsForceBounds: $("#boundsForceBounds"),
-                boundsForceFactor: $("#boundsForceFactor"),
-
-                distanceDeathSwitch: $("#distanceDeathSwitch"),
-                distanceDeathDistance: $("#distanceDeathDistance"),
-
-                evolveSwitch: $("#evolveSwitch"),
-                evolveChangeRate: $("#evolveChangeRate"),
-                evolveKernelSize: $("#evolveKernelSize"),
-
-                boundsDeathSwitch: $("#boundsDeathSwitch"),
-
-            };
-        }
-
-        function updateFormToSketcher(form, sketcher) {
-            form.imageURL.val(sketcher.targetImageURL);
-
-            form.width.val(sketcher.targetWidth || "");
-            form.height.val(sketcher.targetHeight || "");
-
-            form.particleCount.val(sketcher.particleCount);
-            form.stepsPerFrame.val(sketcher.stepsPerFrame);
-
-
-            form.defaultVel.val(sketcher.defaultVel.x + ", " + sketcher.defaultVel.y);
-            form.dampeningFactor.val(sketcher.dampeningFactor);
-            form.maxSpeed.val(sketcher.maxSpeed);
-
-            form.dropRate.val(sketcher.dropRate);
-            form.dropAlpha.val(sketcher.dropAlpha);
-            form.dropMaxSize.val(sketcher.dropMaxSize);
-
-            form.drawAlpha.val(sketcher.drawAlpha);
-            form.drawWeight.val(sketcher.drawWeight);
-
-            console.log(sketcher.particleBehaviours);
-            console.log(behaviours);
-
-            form.attractionSwitch.text(sketcher.particleBehaviours.includes(behaviours.attraction) ? "On" : "Off");
-            form.attractionKernelSize.val(behaviours.attraction.kernelWidth + "," + behaviours.attraction.kernelHeight);
-            form.attractionForceFactor.val(behaviours.attraction.forceFactor);
-            form.attractionAverage.text(behaviours.attraction.willAverage ? "On" : "Off");
-
-            form.noiseSwitch.text(sketcher.particleBehaviours.includes(behaviours.noise) ? "On" : "Off");
-            form.noiseScale.val(behaviours.noise.noiseScale);
-            form.noiseInfluence.val(behaviours.noise.noiseInfluence);
-            form.noiseTimeFactor.val(behaviours.noise.timeFactor);
-
-            form.limitDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.limitDeath) ? "On" : "Off");
-            form.limitDeathMaxLife.val(behaviours.limitDeath.maxLife); // it can't be a function in this example
-
-            form.boundsForceSwitch.text(sketcher.particleBehaviours.includes(behaviours.boundsForce) ? "On" : "Off");
-            form.boundsForceBounds.val(
-                behaviours.boundsForce.top + "," +
-                behaviours.boundsForce.right + "," +
-                behaviours.boundsForce.bottom + "," +
-                behaviours.boundsForce.left
-            );
-            form.boundsForceFactor.val(behaviours.boundsForce.forceFactor);
-
-            form.distanceDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.distanceDeath) ? "On" : "Off");
-            form.distanceDeathDistance.val(behaviours.distanceDeath.maxDistance);
-
-            form.evolveSwitch.text(sketcher.particleBehaviours.includes(behaviours.evolve) ? "On" : "Off");
-            form.evolveChangeRate.val(behaviours.evolve.changeRate);
-            form.evolveKernelSize.val(behaviours.evolve.kernelWidth + "," + behaviours.evolve.kernelHeight);
-
-            form.boundsDeathSwitch.text(sketcher.particleBehaviours.includes(behaviours.boundsDeath) ? "On" : "Off");
+            $("#width").val(sketcher.targetWidth || "");
+            $("#height").val(sketcher.targetHeight || "");
 
         }
 
@@ -417,7 +490,8 @@
             assigned by a generator which would override this default. e.g '5,5' meaning 5 pixels per update in each
             axis. Speed dampening is a factor that is applied to each particles speed at each update, creating an
             exponential drag force. e.g 0.99. Max speed is the maximum speed that a particle can travel at, if a
-            particle exceeds this speed then the speed will be reduced to the max speed e.g. 3.
+            particle exceeds this speed then the speed will be reduced to the max speed e.g. 3. Max speed must be
+            positive.
         </small>
 
         <div class="row">
@@ -445,8 +519,9 @@
         </div>
         <small>
             These parameters are relating to the ink drops that particles can draw. Drop chance is the probability that
-            an ink drop is drawn during any given update e.g 0.0008. Draw opacity is the opacity of the drop e.g. 150.
-            Max drop size is the maximum diameter of the drop (in pixels) e.g 5.
+            an ink drop is drawn during any given update e.g 0.0008. Drop chance must be between 0 and 1 (inclusively)
+            Draw opacity is the opacity of the drop e.g. 150. Opacity must be between 0 and 255 (inclusively). Max drop
+            size is the maximum diameter of the drop (in pixels) e.g 5. Max size must be more than 0.
         </small>
 
         <div class="row">
@@ -465,10 +540,11 @@
                 </div>
             </div>
         </div>
-        <small>These properties relate to the trace that the particle leaves behind as it moves e.g '50' and '1'</small>
+        <small>These properties relate to the trace that the particle leaves behind as it moves e.g '50' and '1' The
+            opacity must be between 0 and 255 (inclusively), the width must be positive
+        </small>
 
-    </div>
-    <div>
+
         <h2>Artsy Settings (Particle Behaviours)</h2>
         <p>Click any title to be taken to the implementation examples</p>
         <hr>
@@ -477,9 +553,10 @@
         <small>
             This behaviour attracts each particle to the surrounding pixels which have the same color as it. Kernel
             size is the size of the rectangle(in pixels) which the particle is attracted to. e.g '5' (5x5 pixels) or
-            '4,3' (4x3 pixels). Force Factor is simply a multiplier on the force that is felt by the object. Average
-            attraction means that the particle will experience the average force from all the pixels, this is different
-            to a factor because behaviour changes when a particle is close to the edges of the image.
+            '4,3' (4x3 pixels). The dimensions must be positive integers. Force Factor is simply a multiplier on the
+            force that is felt by the object. Average attraction means that the particle will experience the average
+            force from all the pixels, this is different to a factor because behaviour changes when a particle is close
+            to the edges of the image.
         </small>
         <div class="row">
             <div class="col">

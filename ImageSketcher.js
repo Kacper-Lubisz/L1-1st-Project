@@ -123,7 +123,9 @@ class ImageSketcher extends P5Component {
             canvas.push();
 
             for (let i = 0; i < this._particleBehaviours.length; i++) {
-                this._particleBehaviours[i].update(this);
+                if (this._particleBehaviours[i].isActive) {
+                    this._particleBehaviours[i].update(this);
+                }
             }
 
             // make sure that the number of particles matches the specified number
