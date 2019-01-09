@@ -286,25 +286,71 @@
                     (array) => sketcher.createVector(array[0], array[1]),
                     (vector) => vector.x + ", " + vector.y,
                     () => sketcher.defaultVel,
-                    (value) => sketcher.defaulVel = value
-                ),
+                    (value) => sketcher.defaulVel = value),
                 new VectorField("attractionKernelSize", 0, undefined, true, "5, 5", 2,
                     (number) => [number, number],
                     (array) => array,
-                    (vector) => vector[0] + ", " + vector[1],
+                    (array) => array.join(", "),
                     () => behaviours.attraction.kernelSize,
-                    (value) => behaviours.attraction.kernelSize = value
-                ),
+                    (value) => behaviours.attraction.kernelSize = value),
                 new VectorField("evolveKernelSize", 0, undefined, true, "3, 3", 2,
                     (number) => [number, number],
                     (array) => array,
-                    (vector) => vector[0] + ", " + vector[1],
+                    (array) => array.join(", "),
                     () => behaviours.evolve.kernelSize,
-                    (value) => behaviours.evolve.kernelSize = value
-                )
-                // $("#boundsForceBounds"),
-                // $("#limitDeathMaxLife"),
-                // $("#distanceDeathDistance")
+                    (value) => behaviours.evolve.kernelSize = value),
+                new VectorField("boundsForceBounds", 0, undefined, false, "0", 4,
+                    (number) => {
+                        return {
+                            top: number,
+                            right: number,
+                            bottom: number,
+                            left: number
+                        };
+                    },
+                    (array) => {
+                        return {
+                            top: array[0],
+                            right: array[1],
+                            bottom: array[2],
+                            left: array[3]
+                        };
+                    },
+                    (object) => object.top + ", " + object.right + ", " + object.bottom + ", " + object.left,
+                    () => behaviours.boundsForce.bounds,
+                    (value) => behaviours.boundsForce.bounds = value),
+                new VectorField("limitDeathMaxLife", 0, undefined, false, "0", 2,
+                    (number) => number,
+                    (array) => {
+                        const func = particle => particle.sketcher.random(array[0], array[1]);
+                        func.string = array.join(", ");
+                        return func;
+                    },
+                    (object) => {
+                        if (typeof object === "function") {
+                            return object.string;
+                        } else {
+                            return object;
+                        }
+                    },
+                    () => behaviours.limitDeath.maxLife,
+                    (value) => behaviours.limitDeath.maxLife = value),
+                new VectorField("distanceDeathDistance", 0, undefined, false, "100", 2,
+                    (number) => number,
+                    (array) => {
+                        const func = particle => particle.sketcher.random(array[0], array[1]);
+                        func.string = array.join(", ");
+                        return func;
+                    },
+                    (object) => {
+                        if (typeof object === "function") {
+                            return object.string;
+                        } else {
+                            return object;
+                        }
+                    },
+                    () => behaviours.distanceDeath.maxDistance,
+                    (value) => behaviours.distanceDeath.maxDistance = value)
             ];
 
             sketcher = new ImageSketcher("images/test7.png", 700, undefined, {
@@ -320,7 +366,7 @@
         function initForm(sketcher) {
 
             fields.forEach(function (field) {
-                field.initForm()
+                field.initForm();
             });
 
             $("#clear").click(sketcher.forceClear.bind(sketcher));
@@ -451,7 +497,7 @@
                 </div>
             </div>
             <small>
-                The produce of the number of particles and updates per frame is proportional to the how
+                The product of the number of particles and updates per frame is proportional to the how
                 computationally intensive the task is, if the frame rate drops then reduce this product
             </small>
         </div>
@@ -645,7 +691,7 @@
             <div class="col-9">
                 <label for="limitDeathMaxLife"><b>Maximum Updates</b></label>
                 <div class="input-group mb-3">
-                    <input id="limitDeathMaxLife" type="number" class="form-control" placeholder="e.g '100' or '75,125'"
+                    <input id="limitDeathMaxLife" type="text" class="form-control" placeholder="e.g '100' or '75,125'"
                            aria-label="Maximum Updates">
                 </div>
             </div>

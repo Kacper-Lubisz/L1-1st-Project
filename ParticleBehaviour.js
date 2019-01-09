@@ -481,33 +481,14 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
 
     /**
      * Instantiates a new object of LinearOutOfBoundsForceBehaviour
-     * @param bounds {Number|Object} the number distance from the edges or an object with the keys 'top', 'right',
+     * @param bounds {Number|{top: Number, left: (Number), bottom: (Number), right: (Number)}} the number distance from the edges or an object with the keys 'top', 'right',
      * 'bottom' and or 'left'
      * @param forceFactor {Number} The magnitude of the max force on the particle
      */
     constructor(bounds = 20, forceFactor = 0.25) {
         super(true);
 
-        this._top = 0;
-        this._right = 0;
-        this._bottom = 0;
-        this._left = 0;
-        if (typeof bounds === "number") {
-            this._top = bounds;
-            this._right = bounds;
-            this._bottom = bounds;
-            this._left = bounds;
-        } else if (typeof bounds === "object" &&
-            ("top" in bounds || "right" in bounds || "bottom" in bounds || "left" in bounds)
-        ) {
-            this._top = bounds.top || 0;
-            this._right = bounds.right || 0;
-            this._bottom = bounds.bottom || 0;
-            this._left = bounds.left || 0;
-        } else {
-            throw TypeError("bounds must either be a number or an object containing the keys 'top', 'right'," +
-                " 'bottom' or 'left'");
-        }
+        this.bounds = bounds;
         this._forceFactor = forceFactor;
 
     }
@@ -529,19 +510,56 @@ class LinearOutOfBoundsForceBehaviour extends ParticleBehaviour {
 
         const boundForce = particle.p5.createVector(0, 0);
         if (particle.pos.x < this._left) {
-            boundForce.x = (this._left - particle.pos.x) / this._left;
+            boundForce.x += (this._left - particle.pos.x) / this._left;
         }
         if (particle.pos.x > particle.img.width - this._right) {
-            boundForce.x = (particle.pos.x - particle.img.width) / this._right;
+            boundForce.x += (particle.pos.x - particle.img.width) / this._right;
         }
         if (particle.pos.y < this._bottom) {
-            boundForce.y = (this._bottom - particle.pos.y) / this._bottom;
+            boundForce.y += (this._bottom - particle.pos.y) / this._bottom;
         }
         if (particle.pos.y > particle.img.height - this._top) {
-            boundForce.y = (particle.pos.y - particle.img.height) / this._top;
+            boundForce.y += (particle.pos.y - particle.img.height) / this._top;
         }
         particle.force.add(boundForce.mult(this._forceFactor));
 
+    }
+
+    /**
+     * Sets the distances from which the force will be applied.
+     * @param value {Number|{top: Number, left: (Number), bottom: (Number), right: (Number)}} the number distance from the edges or an object with the keys 'top', 'right',
+     * 'bottom' and or 'left'
+     */
+    set bounds(value) {
+        this._top = 0;
+        this._right = 0;
+        this._bottom = 0;
+        this._left = 0;
+        if (typeof value === "number" && Number.isFinite(value)) {
+            this._top = value;
+            this._right = value;
+            this._bottom = value;
+            this._left = value;
+        } else if (typeof value === "number") {
+            throw TypeError("Bounds must be a finite number");
+        } else if (typeof value === "object" &&
+            ("top" in value || "right" in value || "bottom" in value || "left" in value)) {
+            this._top = value.top || 0;
+            this._right = value.right || 0;
+            this._bottom = value.bottom || 0;
+            this._left = value.left || 0;
+        } else {
+            throw TypeError("Bounds must either be a number or an object containing the keys 'top', 'right'," +
+                " 'bottom' or 'left'");
+        }
+    }
+
+    /**
+     * Returns all the bounds in an array in the order top, right, bottom, left
+     * @return {{top: Number, left: (Number), bottom: (Number), right: (Number)}} the bounds
+     */
+    get bounds() {
+        return {top: this._top, right: this._right, bottom: this._bottom, left: this._left};
     }
 
     /**
@@ -666,8 +684,8 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
     constructor(maxDistance = 50) {
         super(false);
 
-        this.distanceTraveled = new Map();
-        this.max = new Map();
+        this._distanceTraveled = new Map();
+        this._max = new Map();
 
         this.maxDistance = maxDistance;
 
@@ -679,13 +697,13 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
      * @param sketcher {ImageSketcher} The sketcher that the behaviour is part of
      */
     update(sketcher) {
-        if (this.distanceTraveled.size > sketcher.particleCount * 2) {
+        if (this._distanceTraveled.size > sketcher.particleCount * 2) {
             // particles that die from other behaviours won't be removed
             // so from time to time the dictionaries should be purged to prevent a memory leak
-            for (const particle of this.distanceTraveled.keys()) {
+            for (const particle of this._distanceTraveled.keys()) {
                 if (!particle.isAlive) {
-                    this.distanceTraveled.delete(particle);
-                    this.max.delete(particle);
+                    this._distanceTraveled.delete(particle);
+                    this._max.delete(particle);
                 }
             }
         }
@@ -698,29 +716,29 @@ class MaxDistanceTraveledDeath extends ParticleBehaviour {
      */
     updateParticle(particle) {
         const distance = particle.vel.copy().mag();
-        if (this.distanceTraveled.get(particle) === undefined) {
-            this.distanceTraveled.set(particle, distance);
+        if (this._distanceTraveled.get(particle) === undefined) {
+            this._distanceTraveled.set(particle, distance);
 
             if (typeof this._maxDistance === "function") {
-                const distance = this._maxDistance.call(particle);
+                const distance = this._maxDistance(particle);
                 if (typeof distance !== "number") {
                     throw TypeError("The max distance function must return a number");
                 } else if (!Number.isFinite(distance)) {
                     throw TypeError("The max distance function must return a finite number");
                 } else {
-                    this.max.set(particle, distance);
+                    this._max.set(particle, distance);
                 }
             } else {
-                this.max.set(particle, this._maxDistance);
+                this._max.set(particle, this._maxDistance);
             }
 
         } else {
-            this.distanceTraveled.set(particle, this.distanceTraveled.get(particle) + distance);
+            this._distanceTraveled.set(particle, this._distanceTraveled.get(particle) + distance);
         }
 
-        if (this.distanceTraveled.get(particle) >= this.max.get(particle)) {
-            this.distanceTraveled.delete(particle);
-            this.max.delete(particle);
+        if (this._distanceTraveled.get(particle) >= this._max.get(particle)) {
+            this._distanceTraveled.delete(particle);
+            this._max.delete(particle);
 
             particle.isAlive = false;
         }
