@@ -1,5 +1,8 @@
 # Programming Summative
 
+## References
+The component usage guide can be found in reference.html
+
 ## Design
 
 The first step to this assignment is to try and understand what an ideal 'reusable component' would look like.  So I set

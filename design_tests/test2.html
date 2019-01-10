@@ -70,13 +70,13 @@
         }
 
         class ExampleComponent extends p5Component {
-            constructor(dimentions = {width: 200, height: 200}) {
+            constructor(dimensions = {width: 200, height: 200}) {
                 super();
-                this.dimentions = dimentions;
+                this.dimensions = dimensions;
             }
 
             setup() {
-                this.createCanvas(this.dimentions.width, this.dimentions.height);
+                this.createCanvas(this.dimensions.width, this.dimensions.height);
             }
 
             draw(canvas) {

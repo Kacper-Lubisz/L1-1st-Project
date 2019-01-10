@@ -11,9 +11,11 @@ class Particle {
     /**
      * Instantiates a new particle object
      * @param sketcher {ImageSketcher} This is the ImageSketcher which the particle is a part of
-     * @param params {Object} This object contains all the optional parameters for the Particle object (this is so that
-     * arguments can be passed in an arbitrary order).  <br>
-     * These are the keys that the object may contain: <br>
+     * @param params {{ pos: (p5.Vector), color: (p5.Color), vel: (p5.Vector), dampeningFactor: (Number), maxSpeed: (Number),
+     * dropRate: (Number), dropAlpha: (Number), dropMaxSize: (Number), drawAlpha: (Number), drawWeight: (Number)}}
+     * This object contains all the optional parameters for the Particle object (this is so that arguments can be passed
+     * in an arbitrary order).  <br>
+     *
      * `pos` - {p5.Vector} The starting position of the particle. <br>
      * `color` - {p5.Color} The starting color of the particle. <br>
      * `vel` - {p5.Vector} The starting velocity of the particle. <br>
@@ -24,8 +26,6 @@ class Particle {
      * `dropMaxSize` - {Number} The upper bound of the uniformly distributed. <br>
      * `drawAlpha` - {Number} The opacity of the trace that the particle draws. <br>
      * `drawWeight` - {Number} The width of the trace that the particle draws. <br>
-     * `updateEvents` - {Array<Function>} List of functions which each take the particle as an argument which allow for complex particle
-     * behaviours, may in built ones are available in ImageSketcher. <br>
      */
     constructor(sketcher, params) {
         let {

@@ -1,15 +1,41 @@
 "use strict";
 
+/**
+ * This class creates a p5Component containing the image sketcher.  The image sketcher is a simple physics simulation
+ * which allows for an artistic recreation of an input image.
+ * For usage examples see:
+ * @see reference.html
+ */
 class ImageSketcher extends P5Component {
 
-    static makeRandomParticleGenerator() {
-        return function (sketcher) {
-            const pos = sketcher.createVector(sketcher.random(0, sketcher.width), sketcher.random(0, sketcher.height));
-            const color = sketcher.getColor(sketcher.targetImage, Math.floor(pos.x), Math.floor(pos.y));
-            return {pos: pos, color: color};
-        };
-    }
-
+    /**
+     * Instantiates a new ImageSketcher
+     * @param targetImageURL {String} the URL of the target image
+     * @param width {Number|undefined} the target width, undefined means to infer from aspect ratio
+     * @param height  {Number|undefined} the target height, undefined means to infer from aspect ratio
+     * @param optionalParameters {{particleCount: (Number), stepsPerFrame: (Number), startStopped: (Boolean),
+     * startPointGenerator: (ParticleGenerator), particleBehaviours: (ParticleBehaviour[]), onKeyListener: (Function),
+     * onClickListener: (Function, dampeningFactor: (Number), maxSpeed: (Number), dropRate: (Number),
+     * dropAlpha: (Number), dropMaxSize: (Number), drawAlpha: (Number), drawWeight: (Number)}}
+     * This object contains all the optional parameters for the Particle object (this is so that arguments can be passed
+     * in an arbitrary order).  <br>
+     *
+     * `particleCount` - {Number} The number of particles in the simulation
+     * `stepsPerFrame` - {Number} The number of simulation updates per simulation frame.
+     * `startStopped` - {Boolean} If the ImageSketcher should start stopped
+     * `startPointGenerator` - {ParticleGenerator} The object that generates the starting parameters for the particles
+     * `particleBehaviours` - {ParticleBehaviour[]} The list of behaviours that are applied to all the particles
+     * `onKeyListener` - {Function} This function is called when a key is pressed
+     * `onClickListener` - {Function} This function is called when the component is clicked
+     * `defaultVel` - {p5.Vector} The starting velocity of the particle. <br>
+     * `dampeningFactor` - {Number} The factor by which the velocity is multiplied by each update. <br>
+     * `maxSpeed` - {Number} The maximum speed that the particle can reach. <br>
+     * `dropRate` - {Number} The chance that an ink drop will be drawn during any draw call. <br>
+     * `dropAlpha` - {Number} The opacity of the ink drops. <br>
+     * `dropMaxSize` - {Number} The upper bound of the uniformly distributed. <br>
+     * `drawAlpha` - {Number} The opacity of the trace that the particle draws. <br>
+     * `drawWeight` - {Number} The width of the trace that the particle draws. <br>
+     */
     constructor(targetImageURL, width, height, optionalParameters) {
         super();
 
@@ -17,7 +43,7 @@ class ImageSketcher extends P5Component {
             particleCount = 100,
             stepsPerFrame = 5,
             startStopped = false,
-            startPointGenerator = ImageSketcher.makeRandomParticleGenerator(),
+            startPointGenerator = new RandomParticleGenerator(),
             particleBehaviours = [
                 // new MaxDistanceTraveledDeath(particle => particle.p5.random(10, 10)),
                 new EvolveColorBehaviour(),
@@ -40,15 +66,14 @@ class ImageSketcher extends P5Component {
             drawWeight = 1,
         } = optionalParameters || {};
 
-        // TODO add type checks
-        this._defaultVel = defaultVel;
-        this._dampeningFactor = dampeningFactor;
-        this._maxSpeed = maxSpeed;
-        this._dropRate = dropRate;
-        this._drawAlpha = drawAlpha;
-        this._drawWeight = drawWeight;
-        this._dropAlpha = dropAlpha;
-        this._dropMaxSize = dropMaxSize;
+        this.defaultVel = defaultVel;
+        this.dampeningFactor = dampeningFactor;
+        this.maxSpeed = maxSpeed;
+        this.dropRate = dropRate;
+        this.drawAlpha = drawAlpha;
+        this.drawWeight = drawWeight;
+        this.dropAlpha = dropAlpha;
+        this.dropMaxSize = dropMaxSize;
 
         this._targetImageURL = targetImageURL;
         this._width = Math.floor(width) || undefined;
@@ -57,21 +82,23 @@ class ImageSketcher extends P5Component {
         // if undefined is passed it will stay undefined instead of going to NaN
 
         this._particles = [];
-        this._stepsPerFrame = stepsPerFrame;
-        this._particleCount = particleCount;
+        this.stepsPerFrame = stepsPerFrame;
+        this.particleCount = particleCount;
 
-        this._particleStartGenerator = startPointGenerator;
-        this._particleBehaviours = particleBehaviours;
+        this.particleStartGenerator = startPointGenerator;
+        this.particleBehaviours = particleBehaviours;
 
-        this._isStopped = startStopped;
+        this.isStopped = startStopped;
         this._forceClear = false;
 
-        this._onKeyListener = onKeyListener;
-        this._onClickListener = onClickListener;
+        this.onKeyListener = onKeyListener;
+        this.onClickListener = onClickListener;
 
     }
 
     /**
+     * This method is to do any slow setup tasks (computationally intensive or suffering from network latency)
+     * For this component the image is loaded.
      * @throws `404 Not found` error if `this.image` is a string an can't be loaded
      */
     preload() {
@@ -81,6 +108,10 @@ class ImageSketcher extends P5Component {
         this._targetImage = this.loadImage(this.targetImageURL);
     }
 
+    /**
+     * This method is called to setup the object after everything has been pre-loaded (e.g. deal with loaded images)
+     * @param parent {P5Component} the parent object calling the setup.  `undefined` if the component is the root
+     */
     setup(parent) {
 
         this.targetImage = this._targetImage; // calls the setter
@@ -93,13 +124,6 @@ class ImageSketcher extends P5Component {
 
         this.background(255, 255, 255);
         this.colorMode(this.RGB, 255);
-
-    }
-
-    _spawnParticle() {
-
-        const startParams = this._particleStartGenerator(this);
-        this._particles.push(new Particle(this, startParams));
 
     }
 
@@ -122,28 +146,30 @@ class ImageSketcher extends P5Component {
         if (!this._isStopped) {
             canvas.push();
 
-            for (let i = 0; i < this._particleBehaviours.length; i++) {
-                if (this._particleBehaviours[i].isActive) {
-                    this._particleBehaviours[i].update(this);
-                }
-            }
+            for (let step = 0; step < this.stepsPerFrame; step++) {
 
-            // make sure that the number of particles matches the specified number
-            if (this._particles.length < this._particleCount) {
-                const newParticles = this._particleCount - this._particles.length;
-                for (let i = 0; i < newParticles; i++) {
-                    this._spawnParticle();
+                this._particleStartGenerator.update(this);
+                for (let i = 0; i < this._particleBehaviours.length; i++) {
+                    if (this._particleBehaviours[i].isActive) {
+                        this._particleBehaviours[i].update(this);
+                    }
                 }
-            } else if (this._particles.length < this._particleCount) {
-                // it is possible for more particles to exist than the target, if the target is changed
-                const particlesToDelete = this._particleCount - this._particles.length;
-                for (let i = 0; i < particlesToDelete; i++) {
-                    this._particles.shift(); // remove the first element
-                }
-            }
 
-            for (let i = 0; i < this._particleCount; i++) {
-                for (let j = 0; j < this._stepsPerFrame; j++) {
+                // make sure that the number of particles matches the specified number
+                if (this._particles.length < this._particleCount) {
+                    const newParticles = this._particleCount - this._particles.length;
+                    for (let i = 0; i < newParticles; i++) {
+                        this._spawnParticle();
+                    }
+                } else if (this._particles.length < this._particleCount) {
+                    // it is possible for more particles to exist than the target, if the target is changed
+                    const particlesToDelete = this._particleCount - this._particles.length;
+                    for (let i = 0; i < particlesToDelete; i++) {
+                        this._particles.shift(); // remove the first element
+                    }
+                }
+
+                for (let i = 0; i < this._particleCount; i++) {
                     const particle = this._particles[i];
                     particle.update();
                     particle.paint(canvas);
@@ -158,86 +184,190 @@ class ImageSketcher extends P5Component {
         }
     }
 
+    /**
+     * This method is called from within the object when a particle needs to be spawned
+     * @private
+     */
+    _spawnParticle() {
+
+        const startParams = this._particleStartGenerator.spawnParticle(this);
+        this._particles.push(new Particle(this, startParams));
+
+    }
+
+    /**
+     * This method is called when the component is clicked.  It is only called externally by p5 if this component
+     * isn't nested
+     */
     mouseClicked() {
         this._onClickListener(this.mouseX, this.mouseY);
     }
 
+    /**
+     * This method is called when a key is pressed while the component is focused.  It is only called externally by p5
+     * if this component isn't nested
+     */
     keyPressed() {
         this._onKeyListener(this.key);
     }
 
+    /**
+     * This method makes it so that the next time that the image sketcher updates the canvas will be cleared.  This
+     * means that the canvas that it is drawing on is cleared.  The target image remains the same.
+     */
     forceClear() {
         this._forceClear = true;
     }
 
+    /**
+     * This method makes it so that the image sketcher will clear it's canvas and reload its target image.
+     */
     reset() {
         this._forceClear = true;
         this.targetImageURL = this.targetImageURL; // call setter to reset the target image
     }
 
+    /**
+     * Returns whether the image sketcher is stopped
+     * @return {Boolean} is stopped
+     */
     get isStopped() {
         return this._isStopped;
     }
 
+    /**
+     * Sets if the image sketcher is stopped or not
+     * @param value {Boolean} new is stopped
+     */
     set isStopped(value) {
-        this._isStopped = value;
+        if (typeof value !== "boolean") {
+            throw TypeError("Is stopped must be a boolean");
+        } else {
+            this._isStopped = value;
+        }
     }
 
+    /**
+     * Sets the on click listener.  This listener is only called by p5 if it is the root element
+     * @param value {Function} the event listener
+     */
     set onClickListener(value) {
         this._onClickListener = value;
     }
 
+    /**
+     * Sets the on key pressed listener.  This listener is only called by p5 if it is the root element
+     * @param value {Function} the event listener
+     */
     set onKeyListener(value) {
         this._onKeyListener = value;
     }
 
+    /**
+     * Returns the number of times that the simulation is updated per frame, this is done to make the simulation run
+     * faster
+     * @return {Number} the number of steps per frame
+     */
     get stepsPerFrame() {
         return this._stepsPerFrame;
     }
 
+    /**
+     * Sets the number of times that the simulation is updated per frame
+     * @param value {Number}
+     */
     set stepsPerFrame(value) {
-        this._stepsPerFrame = value;
+        if (typeof value !== "number") {
+            throw TypeError("Steps per frame must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Steps per frame must be finite");
+        } else if (!Number.isInteger(value)) {
+            throw Error("Steps per frame must be an integer");
+        } else {
+            this._stepsPerFrame = value;
+        }
     }
 
+    /**
+     * Returns the number of particles in the simulation at one time
+     * @return {Number} the number of particles
+     */
     get particleCount() {
         return this._particleCount;
     }
 
+    /**
+     * Sets the number of particles that will coexist in the simulation at any one point
+     * @param value {Number} the new particle count
+     */
     set particleCount(value) {
-        this._particleCount = value;
+        if (typeof value !== "number") {
+            throw TypeError("Particle count must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Particle count must be finite");
+        } else if (!Number.isInteger(value)) {
+            throw Error("Particle count must be an integer");
+        } else {
+            this._particleCount = value;
+        }
     }
 
+    /**
+     * Returns the target image, the image that the particles are drawing.
+     * @return {p5.Image}
+     */
     get targetImage() {
         return this._targetImage;
     }
 
+    /**
+     * Sets the target image.  This method also recalculates any dimensions set to auto and rescales the canvas.  The
+     * canvas is also cleared.
+     * @param value {p5.Image} the new targetImage
+     */
     set targetImage(value) {
 
-        let width = this._width;
-        let height = this._height;
-        if (width === undefined && height === undefined) { // nothing give, taken from image
-            width = this._targetImage.width;
-            height = this._targetImage.height;
-        } else if (width === undefined) { // height, infer width from aspect ration
-            width = Math.floor(value.width / value.height * height);
-        } else if (height === undefined) { // width, infer height from aspect ration
-            height = Math.floor(value.height / value.width * width);
-        } // else values are already good
+        if (!value instanceof p5.Image) {
+            throw TypeError("Target image must be of type p5.Image");
+        } else {
+            let width = this._width;
+            let height = this._height;
+            if (width === undefined && height === undefined) { // nothing give, taken from image
+                width = this._targetImage.width;
+                height = this._targetImage.height;
+            } else if (width === undefined) { // height, infer width from aspect ration
+                width = Math.floor(value.width / value.height * height);
+            } else if (height === undefined) { // width, infer height from aspect ration
+                height = Math.floor(value.height / value.width * width);
+            } // else values are already good
 
 
-        this._targetImage = this.createImage(width, height);
-        this._targetImage.copy(value, 0, 0, value.width, value.height, 0, 0, this._targetImage.width, this._targetImage.height);
-        this._targetImage.loadPixels();
-        this.resizeCanvas(width, height, true);
+            this._targetImage = this.createImage(width, height);
+            this._targetImage.copy(value, 0, 0, value.width, value.height, 0, 0, this._targetImage.width, this._targetImage.height);
+            this._targetImage.loadPixels();
+            this.resizeCanvas(width, height, true);
+        }
     }
 
+    /**
+     * Returns the URL to the target image.  Notably, if the target image last wasn't set using a URL, this will return
+     * the wrong URL.
+     * @return {String} the URL
+     */
     get targetImageURL() {
         return this._targetImageURL;
     }
 
+    /**
+     * This method sets sets the target image from a URL.  This will could result in the resizing of the canvas (see
+     * the setter for targetImage).  Most browsers will not allow cross domain requests, meaning that not all URLs will
+     * work.
+     * @param value {String} new image URL
+     */
     set targetImageURL(value) {
         this._targetImageURL = value;
         // this may fail and error out if the image isn't found
+        // if value isn't a string at all this will also error out
 
         const wasStopped = this._isStopped;
         this.isStopped = true;
@@ -250,10 +380,21 @@ class ImageSketcher extends P5Component {
 
     }
 
+    /**
+     * Returns the target height of the component.  If it is undefined it will be inferred from the aspect ratio of the
+     * image when the image is set.
+     * @return {Number | undefined}
+     */
     get targetHeight() {
         return this._height;
     }
 
+    /**
+     * This validates the width or height
+     * @param value {Object} The width/height to be
+     * @param text {String} width or height
+     * @private
+     */
     static _validateWidthHeight(value, text) {
         if (value !== undefined) if (typeof value !== "number") {
             throw TypeError("target " + text + " must be a number or undefined");
@@ -264,6 +405,12 @@ class ImageSketcher extends P5Component {
         }
     }
 
+    /**
+     * This sets the size of the Image sketcher, specific values can be given, or undefined can be passed to make
+     * auto calculate that dimension from the aspect ration
+     * @param width {Number | undefined} new width
+     * @param height {Number | undefined} new height
+     */
     setSize(width, height) {
         this._width = width;
         this._height = height;
@@ -275,6 +422,11 @@ class ImageSketcher extends P5Component {
         this.forceClear();
     }
 
+    /**
+     * Sets the target height of the component.  If it is undefined it will be inferred from the aspect ratio of the
+     * image when the image is set.
+     * @param value {Number | undefined}
+     */
     set targetHeight(value) {
         ImageSketcher._validateWidthHeight(value, "height");
 
@@ -284,10 +436,20 @@ class ImageSketcher extends P5Component {
         this.forceClear();
     }
 
+    /**
+     * Returns the target width of the component.  If it is undefined it will be inferred from the aspect ratio of the
+     * image when the image is set.
+     * @return {Number | undefined}
+     */
     get targetWidth() {
         return this._width;
     }
 
+    /**
+     * Sets the target width of the component.  If it is undefined it will be inferred from the aspect ratio of the
+     * image when the image is set.
+     * @param value {Number | undefined}
+     */
     set targetWidth(value) {
         ImageSketcher._validateWidthHeight(width, "width");
 
@@ -297,80 +459,232 @@ class ImageSketcher extends P5Component {
         this.forceClear();
     }
 
+    /**
+     * Sets the particle start generator.
+     * @see ParticleGenerator
+     * @see RandomParticleGenerator
+     * @param value the new generator
+     */
     set particleStartGenerator(value) {
-        this._particleStartGenerator = value;
+        if (!value instanceof ParticleGenerator) {
+            throw TypeError("Particle start generator must be of type ParticleGenerator");
+        } else {
+            this._particleStartGenerator = value;
+        }
     }
 
+    /**
+     * Returns the list of particle behaviours that act on all particles unless it is overwritten by the particle
+     * generator.
+     * @return {ParticleBehaviour[]}
+     */
     get particleBehaviours() {
         return this._particleBehaviours;
     }
 
+    /**
+     * Sets the default particle behaviours.
+     * @param value {ParticleBehaviour[]} new list of behaviours
+     */
     set particleBehaviours(value) {
-        this._particleBehaviours = value;
+        if (!Array.isArray(value)) {
+            throw  TypeError("Particle behaviours must be an array");
+        } else if (value.some(behaviour => !behaviour instanceof ParticleBehaviour)) {
+            throw  TypeError("All particle behaviours in the list must be be of type ParticleBehaviour");
+        } else {
+            this._particleBehaviours = value;
+        }
     }
 
+    /**
+     * Returns the default start velocity of the particle, it can be overwritten by the particle generator
+     * @return {p5.Vector} the start velocity
+     */
     get defaultVel() {
         return this._defaultVel;
     }
 
+    /**
+     * Sets the default particle start velocity, it can be overwritten by the particle generator
+     * @param value {p5.Vector} the new defaultVelocity
+     */
     set defaultVel(value) {
-        this._defaultVel = value;
+        if (!value instanceof p5.Vector) {
+            throw TypeError("Default velocity must be of type p5.Vector");
+        } else {
+            this._defaultVel = value;
+        }
     }
 
+    /**
+     * Returns the default dampening factor.  The dampening factor is a factor by which the speed of the particle is
+     * multiplied at each update. It can be overwritten by the particle generator
+     * @return {Number} the dampening factor
+     */
     get dampeningFactor() {
         return this._dampeningFactor;
     }
 
+    /**
+     * Sets the default dampening factor, it can be overwritten by the particle generator.
+     * @param value {Number} the new dampening factor
+     */
     set dampeningFactor(value) {
-        this._dampeningFactor = value;
+        if (typeof value !== "number") {
+            throw TypeError("Dampening factor must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw TypeError("Dampening factor must be finite");
+        } else if (value < 0) {
+            throw TypeError("Dampening factor must be positive");
+        } else {
+            this._dampeningFactor = value;
+        }
     }
 
+    /**
+     * Returns the max speed of the particles in the simulation, It can be overwritten by the particle generator.
+     * @return {Number} the max speed
+     */
     get maxSpeed() {
         return this._maxSpeed;
     }
 
+    /**
+     * Sets the max speed of the particles in the simulation, it can be overwritten by the particle generator.
+     * @param value {Number} the new default max speed
+     */
     set maxSpeed(value) {
-        this._maxSpeed = value;
+        if (typeof value !== "number") {
+            throw TypeError("Max speed must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw TypeError("Max speed must be finite");
+        } else if (value < 0) {
+            throw TypeError("Max speed must be positive or 0");
+        } else {
+            this._maxSpeed = value;
+        }
     }
 
+    /**
+     * Returns the drop rate.  The drop rate is the probability that an ink splodge will be drawn in any update. It can
+     * be overwritten by the particle generator.
+     * @return {Number} the drop rate
+     */
     get dropRate() {
         return this._dropRate;
     }
 
+    /**
+     * Sets the drop rate.  The drop rate is the probability that an ink splodge will be drawn in any update. It can
+     * be overwritten by the particle generator.
+     * @param value {Number} the new drop rate
+     */
     set dropRate(value) {
-        this._dropRate = value;
+        if (typeof value !== "number") {
+            throw TypeError("Drop rate must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Drop rate must be finite");
+        } else if (value < 0 || value > 1) {
+            throw Error("Drop rate between 0 and 1 (inc.)");
+        } else {
+            this._dropRate = value;
+        }
     }
 
+    /**
+     * Returns the draw opacity. It can be overwritten by the particle generator.
+     * @return {Number} the draw opacity
+     */
     get drawAlpha() {
         return this._drawAlpha;
     }
 
+    /**
+     * Sets the drop opacity (between 0 to 255 inc.). It can be overwritten by the particle generator.
+     * @param value {Number} the new drop rate
+     */
     set drawAlpha(value) {
-        this._drawAlpha = value;
+        if (typeof value !== "number") {
+            throw TypeError("Draw alpha must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Draw alpha must be finite");
+        } else if (value > 255 || value < 0) {
+            throw Error("Draw alpha must be between 0 and 255 inclusively");
+        } else {
+            this._drawAlpha = value;
+        }
     }
 
+    /**
+     * Return the width of the line left by the particle. It can be overwritten by the particle generator.
+     * @return {Number} the width
+     */
     get drawWeight() {
         return this._drawWeight;
     }
 
+    /**
+     * Sets the width of the line left by the particle. It can be overwritten by the particle generator.
+     * @param value {Number} the new width
+     */
     set drawWeight(value) {
-        this._drawWeight = value;
+        if (typeof value !== "number") {
+            throw TypeError("Draw weight must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Draw weight must be finite");
+        } else if (value < 0) {
+            throw Error("Draw weight must be positive");
+        } else {
+            this._drawWeight = value;
+        }
     }
 
+    /**
+     * Returns the drop opacity. It can be overwritten by the particle generator.
+     * @return {number} the draw opacity
+     */
     get dropAlpha() {
         return this._dropAlpha;
     }
 
+    /**
+     * Sets the drop opacity (between 0 and 255 inc.) . It can be overwritten by the particle generator.
+     * @param value {Number} the new drop opacity
+     */
     set dropAlpha(value) {
-        this._dropAlpha = value;
+        if (typeof value !== "number") {
+            throw TypeError("Drop alpha must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Drop alpha must be finite");
+        } else if (value > 255 || value < 0) {
+            throw Error("Drop alpha must be between 0 and 255 inclusively");
+        } else {
+            this._dropAlpha = value;
+        }
     }
 
+    /**
+     * Returns the max drop size. It can be overwritten by the particle generator.
+     * @return {Number} the max drop size
+     */
     get dropMaxSize() {
         return this._dropMaxSize;
     }
 
+    /**
+     * Sets the maximum drop size. It can be overwritten by the particle generator.
+     * @param value {Number} the new max drop size
+     */
     set dropMaxSize(value) {
-        this._dropMaxSize = value;
+        if (typeof value !== "number") {
+            throw TypeError("Draw weight must be a number");
+        } else if (!Number.isFinite(value)) {
+            throw Error("Draw weight must be finite");
+        } else if (value < 0) {
+            throw Error("Draw weight must be positive");
+        } else {
+            this._dropMaxSize = value;
+        }
     }
 
     /**

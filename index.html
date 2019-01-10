@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
           integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
@@ -20,90 +21,131 @@
 
     <script src="Particle.js"></script>
     <script src="ParticleBehaviour.js"></script>
+    <script src="ParticleGenerator.js"></script>
     <script src="P5Component.js"></script>
 
     <script src="ImageSketcher.js"></script>
 
     <title>My Project</title>
-
     <script>
 
-        function getSize() {
-            const $width = $("#width");
-            const $height = $("#height");
+        /**
+         * This class is used to encapsulate the setting up of all elements of the form
+         */
+        class FormElement {
+            /**
+             * Fetches the DOM object
+             * @param DOMId {String} the ID of the element
+             */
+            constructor(DOMId) {
+                this._DOMElement = $("#" + DOMId);
+            }
 
-            let width = $width.val().trim();
-            let height = $height.val().trim();
+            /**
+             * This method is called to update the text in the field with the current state of the sketcher
+             */
+            updateForm() {
+            }
 
-            width = width === "" || isNaN(Number(width)) ? undefined : Math.floor(Math.max(Number(width), 1));
-            height = height === "" || isNaN(Number(height)) ? undefined : Math.floor(Math.max(Number(height), 1));
-
-            $width.val(width); // to snap negative values back into range
-            $height.val(height);
-
-            return {width: width, height: height};
-
+            /**
+             * This method adds any listeners to the form and is only called once.
+             */
+            initForm() {
+            }
         }
 
         /**
-         * Simple data class used for automating the form.
+         * This class is used to represent all the toggle buttons on the form
          */
-        class ToggleButton {
+        class ToggleButton extends FormElement {
+            /**
+             * @param DOMId {String} The id of the button
+             * @param trueLabel {String} The label on the button when the property is true
+             * @param falseLabel {String} The label on the button when the property is false
+             * @param getter {Function} Function which returns the field that the button is supposed to toggle
+             * @param setter {Function} Function which sets the field that the button is supposed to toggle
+             */
             constructor(DOMId, trueLabel, falseLabel, getter, setter) {
-                this.DOMElement = $("#" + DOMId);
-                this.trueLabel = trueLabel;
-                this.falseLabel = falseLabel;
-                this.getter = getter;
-                this.setter = setter;
+                super(DOMId);
+                this._trueLabel = trueLabel;
+                this._falseLabel = falseLabel;
+                this._getter = getter;
+                this._setter = setter;
             }
 
+            /**
+             * This method is called to update the text in the field with the current state of the sketcher
+             */
             updateForm() {
-                this.DOMElement.text(this.getter() ? this.trueLabel : this.falseLabel);
+                this._DOMElement.text(this._getter() ? this._trueLabel : this._falseLabel);
             }
 
+            /**
+             * This method adds any listeners to the form and is only called once.
+             */
             initForm() {
                 const field = this;
-                this.DOMElement.click(function () {
-                    field.setter(!field.getter());
-                    field.DOMElement.text(field.getter() ? field.trueLabel : field.falseLabel);
+                this._DOMElement.click(function () {
+                    field._setter(!field._getter());
+                    field._DOMElement.text(field._getter() ? field._trueLabel : field._falseLabel);
                 });
             }
+
+            // I didn't add getters and setters for these classes because they're not really made to be used by anything
+            // outside of this file, so it doesn't need to be safe.
+
         }
 
         /**
-         * This is another simple data class for storing the properties of numeric fields
+         * This class is used to represent all the simple numeric fields
          */
-        class NumericField {
+        class NumericField extends FormElement {
+
+            /**
+             * @param DOMId {String} The id of the button
+             * @param minValue {Number} the maximum value that will be set
+             * @param maxValue {Number} the minimum value that will be set
+             * @param roundDown {Boolean} Weather the value will be rounded down
+             * @param emptyString {Number}  The number that will be set if the field is set to an empty string
+             * @param getter {Function} Function which returns the field that the button is supposed to toggle
+             * @param setter {Function} Function which sets the field that the button is supposed to toggle
+             */
             constructor(DOMId, minValue, maxValue, roundDown, emptyString, getter, setter) {
-                this.DOMElement = $("#" + DOMId);
-                this.maxValue = maxValue;
-                this.minValue = minValue;
-                this.roundDown = roundDown;
-                this.emptyString = emptyString;
-                this.getter = getter;
-                this.setter = setter;
+                super(DOMId);
+                this._maxValue = maxValue;
+                this._minValue = minValue;
+                this._roundDown = roundDown;
+                this._emptyString = emptyString;
+                this._getter = getter;
+                this._setter = setter;
             }
 
+            /**
+             * This method is called to update the text in the field with the current state of the sketcher
+             */
             updateForm() {
-                this.DOMElement.val(this.getter());
+                this._DOMElement.val(this._getter());
             }
 
+            /**
+             * This method adds any listeners to the form and is only called once.
+             */
             initForm() {
                 const field = this;
-                this.DOMElement.change(function () {
-                    let value = field.DOMElement.val();
+                this._DOMElement.change(function () {
+                    let value = field._DOMElement.val();
                     let next;
                     if (value === "") {
-                        next = field.emptyString;
+                        next = field._emptyString;
                     } else if (Number.isFinite(Number(value))) {
                         next = Number(value);
-                        if (field.maxValue !== undefined) {
-                            next = Math.min(next, field.maxValue);
+                        if (field._maxValue !== undefined) {
+                            next = Math.min(next, field._maxValue);
                         }
-                        if (field.minValue !== undefined) {
-                            next = Math.max(next, field.minValue);
+                        if (field._minValue !== undefined) {
+                            next = Math.max(next, field._minValue);
                         }
-                        if (field.roundDown) {
+                        if (field._roundDown) {
                             next = Math.floor(next);
                         }
                     } else {
@@ -111,18 +153,35 @@
                     }
 
                     if (next !== undefined) {
-                        field.DOMElement.val(next);
-                        field.setter(next);
+                        field._DOMElement.val(next);
+                        field._setter(next);
                     } else {
-                        field.DOMElement.val(field.getter());
+                        field._DOMElement.val(field._getter());
                     }
                 });
             }
         }
 
-        class VectorField {
+        /**
+         * This class is used to represent all the text fields that take multiple inputs
+         */
+        class VectorField extends FormElement {
+            /**
+             * @param DOMId {String} The id of the button
+             * @param minValue {Number} the maximum value that will be set
+             * @param maxValue {Number} the minimum value that will be set
+             * @param roundDown {Boolean} Weather the value will be rounded down
+             * @param emptyString {String}  The string that will be processed if an empty string is entered
+             * @param dimensions {Number}  The integer number of numbers that the field will accept
+             * @param numberToValue {Function} If a single number is entered into the field, this function will map it
+             * the vector, if left undefined this the case where a number is given is erroneous
+             * @param arrayToValue {Function} Maps the array of entered numbers to the vector in the format needed
+             * @param makeString {Function} The toString function for the vector
+             * @param getter {Function} Function which returns the field that the button is supposed to toggle
+             * @param setter {Function} Function which sets the field that the button is supposed to toggle
+             */
             constructor(DOMId, minValue, maxValue, roundDown, emptyString, dimensions, numberToValue, arrayToValue, makeString, getter, setter) {
-                this.DOMElement = $("#" + DOMId);
+                super(DOMId);
                 this.maxValue = maxValue;
                 this.minValue = minValue;
                 this.roundDown = roundDown;
@@ -135,18 +194,24 @@
                 this.setter = setter;
             }
 
+            /**
+             * This method is called to update the text in the field with the current state of the sketcher
+             */
             updateForm() {
-                this.DOMElement.val(this.makeString(this.getter()));
+                this._DOMElement.val(this.makeString(this.getter()));
             }
 
+            /**
+             * This method adds any listeners to the form and is only called once.
+             */
             initForm() {
                 const field = this;
-                this.DOMElement.change(function () {
-                    let value = field.DOMElement.val();
+                this._DOMElement.change(function () {
+                    let value = field._DOMElement.val();
                     let next;
 
                     if (value === "") {
-                        next = field.DOMElement.emptyString;
+                        next = field._DOMElement.emptyString;
                     }
                     const sections = value.split(",");
                     if (sections.length === field.dimensions ||
@@ -180,10 +245,10 @@
                     }
 
                     if (next !== undefined) {
-                        field.DOMElement.val(field.makeString(next));
+                        field._DOMElement.val(field.makeString(next));
                         field.setter(next);
                     } else {
-                        field.DOMElement.val(field.makeString(field.getter()));
+                        field._DOMElement.val(field.makeString(field.getter()));
                     }
 
                 });
@@ -194,7 +259,7 @@
         let sketcher;
         let behaviours;
 
-        $(function () {
+        $(function () { // on dom ready
 
             behaviours = {
                 attraction: new SimpleAttractiveForceBehaviour(),
@@ -206,6 +271,7 @@
                 boundsDeath: new OutOfBoundsDeathBehaviour()
             };
 
+            // This is a list of all the fields, this data is used to create their listeners
             fields = [
                 new ToggleButton("pause", "Resume", "Pause",
                     () => sketcher.isStopped,
@@ -353,16 +419,20 @@
                     (value) => behaviours.distanceDeath.maxDistance = value)
             ];
 
-            sketcher = new ImageSketcher("images/test7.png", 700, undefined, {
+            sketcher = new ImageSketcher("images/test5.png", 700, undefined, {
                 particleBehaviours: Object.values(behaviours)
             });
 
             new p5(sketcher.generateSeed(), document.getElementById("sketch"), true);
 
+            // init for the html
             initForm(sketcher);
             updateFormToSketcher(sketcher);
         });
 
+        /**
+         * This function adds all the listeners to the form elements
+         */
         function initForm(sketcher) {
 
             fields.forEach(function (field) {
@@ -415,16 +485,40 @@
 
         }
 
-        function updateFormToSketcher(sketcher) {
+        /**
+         * Sets all the values in the form to reflect the properties of the sketcher
+         */
+        function updateFormToSketcher() {
 
             fields.forEach(function (field) {
-                field.updateForm(sketcher);
+                field.updateForm();
             });
 
             $("#imageURL").val(sketcher.targetImageURL);
 
             $("#width").val(sketcher.targetWidth || "");
             $("#height").val(sketcher.targetHeight || "");
+
+        }
+
+        /**
+         * This function returns the width and height from the form fields
+         * @return {{width: (Number), height: (Number)}}
+         */
+        function getSize() {
+            const $width = $("#width");
+            const $height = $("#height");
+
+            let width = $width.val().trim();
+            let height = $height.val().trim();
+
+            width = width === "" || isNaN(Number(width)) ? undefined : Math.floor(Math.max(Number(width), 1));
+            height = height === "" || isNaN(Number(height)) ? undefined : Math.floor(Math.max(Number(height), 1));
+
+            $width.val(width); // to snap negative values back into range
+            $height.val(height);
+
+            return {width: width, height: height};
 
         }
 

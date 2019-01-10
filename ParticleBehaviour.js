@@ -11,7 +11,7 @@ class ParticleBehaviour {
     constructor(startActive = true) {
         // this block emulates an abstract class
         if (this.constructor === ParticleBehaviour) {
-            throw new TypeError('Abstract class "p5Component" cannot be instantiated directly.');
+            throw new TypeError('Abstract class "ParticleBehaviour" cannot be instantiated directly.');
         }
 
         const emulatedMethodModifiers = {
@@ -115,15 +115,11 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
 
         const halfWidth = this._kernelWidth / 2;
         const halfHeight = this._kernelHeight / 2;
+        for (let i = 0; i <= this._kernelWidth; i++) {
 
-        // TODO fix this, it doesn't work for even kernel sizes
-        for (let i = -halfWidth; i <= halfWidth; i++) {
-            for (let j = -halfHeight; j <= halfHeight; j++) {
-                if (i === 0 && j === 0)
-                    continue;
-
-                const x = Math.floor(particle.pos.x + i);
-                const y = Math.floor(particle.pos.y + j);
+            for (let j = 0; j <= this._kernelHeight; j++) {
+                const x = Math.floor(particle.pos.x + i - halfWidth);
+                const y = Math.floor(particle.pos.y + j - halfHeight);
 
                 if (x < particle.img.width && x >= 0 && y < particle.img.height && y >= 0) {
                     const c = particle.sketcher.getColor(particle.img, x, y);
@@ -133,7 +129,7 @@ class SimpleAttractiveForceBehaviour extends ParticleBehaviour {
                         Math.abs(c.levels[2] - particle.color.levels[2])
                     );
                     const b = 1 - particle.p5.brightness(dif) / 255;
-                    const v = particle.p5.createVector(i, j);
+                    const v = particle.p5.createVector(i - halfWidth, j - halfHeight);
                     total.add(v.normalize().mult(b));
 
                     pixels += 1;
@@ -803,11 +799,12 @@ class EvolveColorBehaviour extends ParticleBehaviour {
         const halfWidth = this._kernelWidth / 2;
         const halfHeight = this._kernelHeight / 2;
 
-        // TODO do extra tests on this
-        for (let x = Math.round(particle.pos.x - halfWidth); x < particle.pos.x + halfWidth; x++) {
-            for (let y = Math.round(particle.pos.y - halfHeight); y < particle.pos.y + halfHeight; y++) {
+        for (let i = 0; i <= this._kernelWidth; i++) {
+            for (let j = 0; j <= this._kernelHeight; j++) {
+                const x = Math.floor(particle.pos.x + i - halfWidth);
+                const y = Math.floor(particle.pos.y + j - halfHeight);
 
-                if (x > 0 && y > 0 && x < particle.img.width && y < particle.img.height) {
+                if (x < particle.img.width && x >= 0 && y < particle.img.height && y >= 0) {
                     const color = particle.sketcher.getColor(particle.img, x, y);
                     totals.r += color.levels[0];
                     totals.g += color.levels[1];

@@ -4,7 +4,7 @@
  * This class is the interface between a reusable component and the p5 library, it also proves utilities for making
  * nested components.
  * This class behaves as **abstract** and cannot be instantiated, only inherited from.
- * [examples.html](/examples.html) for example implementations
+ * [reference.html](/reference.html) for example implementations
  * @abstract
  */
 class P5Component {
@@ -126,7 +126,6 @@ class P5Component {
      */
     generateSeed() {
         const component = this;
-        const originalProto = this.__proto__;
         return function (sketch) {
             component._initPrototype(sketch);
             sketch.setup = component.setup;

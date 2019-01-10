@@ -73,9 +73,9 @@
         }
 
         class ExampleComponent extends p5Component {
-            constructor(color = "#fff", isClockwise = true, dimentions = {width: 200, height: 200}) {
+            constructor(color = "#fff", isClockwise = true, dimensions = {width: 200, height: 200}) {
                 super();
-                this.dimentions = dimentions;
+                this.dimensions = dimensions;
                 this.color = color;
                 this.isClockwise = isClockwise;
             }
@@ -86,7 +86,7 @@
                 }
 
                 if (parent === undefined) {
-                    this.createCanvas(this.dimentions.width, this.dimentions.height);
+                    this.createCanvas(this.dimensions.width, this.dimensions.height);
                 }
 
                 this.isSetup = true;
@@ -97,7 +97,7 @@
                 canvas.push();
                 canvas.stroke("#fff");
                 canvas.fill(255, 255, 255, 10);
-                canvas.rect(0, 0, this.dimentions.width, this.dimentions.height);
+                canvas.rect(0, 0, this.dimensions.width, this.dimensions.height);
                 canvas.pop();
 
                 const position = this.calculatePosition();
