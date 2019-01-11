@@ -1,6 +1,15 @@
 # Programming Summative
 
-## References
+This project is my updated version of this sketch on open processing https://www.openprocessing.org/sketch/486307.  The 
+sketch is a simulation designed to recreate an image in an artistic way.  The principe behind this is that particles (
+in the simulation) feel various forces which influence the way they move across the canvas.  As the particles move they
+trace a line behind them.  The main force on the particles is the attractive force of the particle to the near areas of 
+the image which are dark.  I call this simulation the 'Image Sketcher'
+
+My version of the original sketch expands on the functionality of the original while also refactoring the simulation 
+to a more reusable form. 
+
+## Usage Guide
 The component usage guide can be found in reference.html
 
 ## Design
@@ -138,7 +147,7 @@ The first idea is to replace the prototype with the sketch. This would result in
 
 One solution is to hack around this by copying all keys from the `CustomComponent`'s prototype that don't conflict to 
 the sketch.  This could result in some truly awful bugs if there are any naming conflicts.  This was my first idea, and
-an implementation can be found in `/design_tests/test1.html`.  As can be seen, the implementation of `ExampleComponent` 
+an implementation can be found in `.preliminaryImplementations/test1.html`.  As can be seen, the implementation of `ExampleComponent` 
 and its usage looks like nice ES6 code.  The compromise being that the implementation of P5Component is very hacked 
 together and quite frankly awful.
 
@@ -146,8 +155,8 @@ This is one solution to instantiating a component straight to a sketch.  The pro
 compatible with the first point I made (nested components). The main issue being that every instance of a component 
 must have its methods added to sketch.  Of course, there is the idea that I could keep track of methods for each class 
 and then throw an error if the methods with the same name exist in multiple classes.  After great hesitation I explored
-this idea, only to reach a dead end (as can be found in `/design test/test2.html`).  The insight I found being that it
-is just not possible for multiple objects to share a prototype and not encounter conflicts (duhh...).
+this idea, only to reach a dead end (as can be found in `.preliminaryImplementations/test2.html`).  The insight I found 
+being that it is just not possible for multiple objects to share a prototype and not encounter conflicts (duhh...).
 
 Other ideas for combining the prototypes of `CustomComponent` and the p5 sketch have their own issues. 
 For example, we might instead try change the second prototype (of `CustomComponent`) in the chain. The first issue is 
@@ -204,7 +213,7 @@ class P5Component {
 ```
 
 This code is still not very nice, but is defiantly cleaner and less destructive than the previous example 
-(`design_tests/test1.html`).  The main disadvantage of this (other than the fact that it's a bad practice) is the fact 
+(`.preliminaryImplementations/test1.html`).  The main disadvantage of this (other than the fact that it's a bad practice) is the fact 
 that it almost certainly hinders with browser javascript optimisation.  The next step is to design a class model.
 
 ### Javascript OOP features and thoughts on good abstraction
@@ -232,12 +241,31 @@ field could be used to disallowing multiple calls the user defined setup from th
 make multiple sketches of the same component and hide all that complexity from the developer using the `P5Component` 
 class.
 
+### User input issues with p5
+
+While trying to implement the P5Component's listeners I found a couple problems.  The first issue that I found was that
+key listeners don't work when there were two instances of a component that uses a key listener. The second issue is that
+mouse listeners bound to the sketch get triggered even when something other than the sketch is pressed.  The other way 
+of implementing this that I found allows for adding mouse listeners to canvas object itself.  This is a good solution
+for mouse presses but doesn't work have an alternative for key presses.  At this point in working on the project I'm
+running out of time so I decided to remove any implementation of listeners in P5Component.
+
+The two work around for adding a mouse listener is to add it directly to the canvas when it is created, for example:
+```javascript
+const canvas = this.createCanvas(100, 100);
+canvas.mousePressed(someFunction);
+```
+The work around that could be used to add key listeners would involve adding a listener directly to the window.
+
+This is only refering to the listeners.  The object do have access to properties such as `mouseX` or ` mouseIsPressed` 
+and functions such as `keyIsPressed`.
+
 ### Making a model for `P5Component`
 
 We already have a solution for instantiating a component to a sketch, now we must consider what a good model which 
 allows for easy nesting of components looks like.  I think that writing a specification would result in an unnecessarily
 complex model, so instead I will implement a nested component to see what needs to be added to the model.  This 
-implementation can be found at `design_tests/test4.html`.
+implementation can be found at `.preliminaryImplementations/test4.html`.
 
 The main points that I took away from this implementation are, The component class should:
 * prevent setup and preload functions from being called multiple times

@@ -8,15 +8,25 @@
  */
 class ImageSketcher extends P5Component {
 
+    // All the types in in the signature for optionalParameters are also undefined to represent default
     /**
      * Instantiates a new ImageSketcher
      * @param targetImageURL {String} the URL of the target image
      * @param width {Number|undefined} the target width, undefined means to infer from aspect ratio
      * @param height  {Number|undefined} the target height, undefined means to infer from aspect ratio
-     * @param optionalParameters {{particleCount: (Number), stepsPerFrame: (Number), startStopped: (Boolean),
-     * startPointGenerator: (ParticleGenerator), particleBehaviours: (ParticleBehaviour[]), onKeyListener: (Function),
-     * onClickListener: (Function, dampeningFactor: (Number), maxSpeed: (Number), dropRate: (Number),
-     * dropAlpha: (Number), dropMaxSize: (Number), drawAlpha: (Number), drawWeight: (Number)}}
+     * @param optionalParameters {{particleCount: (Number|undefined),
+     * stepsPerFrame: (Number|undefined),
+     * startStopped: (Boolean|undefined),
+     * startPointGenerator: (ParticleGenerator|undefined),
+     * particleBehaviours: (ParticleBehaviour[]|undefined),
+     * onClickListener: (Function|undefined),
+     * dampeningFactor: (Number|undefined),
+     * maxSpeed: (Number|undefined),
+     * dropRate: (Number|undefined),
+     * dropAlpha: (Number|undefined),
+     * dropMaxSize: (Number|undefined),
+     * drawAlpha: (Number|undefined),
+     * drawWeight: (Number|undefined)}}
      * This object contains all the optional parameters for the Particle object (this is so that arguments can be passed
      * in an arbitrary order).  <br>
      *
@@ -25,7 +35,6 @@ class ImageSketcher extends P5Component {
      * `startStopped` - {Boolean} If the ImageSketcher should start stopped
      * `startPointGenerator` - {ParticleGenerator} The object that generates the starting parameters for the particles
      * `particleBehaviours` - {ParticleBehaviour[]} The list of behaviours that are applied to all the particles
-     * `onKeyListener` - {Function} This function is called when a key is pressed
      * `onClickListener` - {Function} This function is called when the component is clicked
      * `defaultVel` - {p5.Vector} The starting velocity of the particle. <br>
      * `dampeningFactor` - {Number} The factor by which the velocity is multiplied by each update. <br>
@@ -53,7 +62,6 @@ class ImageSketcher extends P5Component {
                 new NoiseForceBehaviour(),
                 new SimpleAttractiveForceBehaviour(),
             ],
-            onKeyListener = Function(), // empty function
             onClickListener = Function(),
 
             defaultVel, // a new vector can't be instantiated at this point
@@ -91,7 +99,6 @@ class ImageSketcher extends P5Component {
         this.isStopped = startStopped;
         this._forceClear = false;
 
-        this.onKeyListener = onKeyListener;
         this.onClickListener = onClickListener;
 
     }
@@ -113,13 +120,13 @@ class ImageSketcher extends P5Component {
      * @param parent {P5Component} the parent object calling the setup.  `undefined` if the component is the root
      */
     setup(parent) {
-
         this.targetImage = this._targetImage; // calls the setter
         // loading in p5 is a pain because calling loadImage doesn't return an image
         // only the promise of an image
 
         if (parent === undefined) {
-            this.createCanvas(this.targetImage.width, this.targetImage.height);
+            const canvas = this.createCanvas(this.targetImage.width, this.targetImage.height);
+            canvas.mousePressed(this.mousePressed.bind(this));
         }
 
         this.background(255, 255, 255);
@@ -196,19 +203,11 @@ class ImageSketcher extends P5Component {
     }
 
     /**
-     * This method is called when the component is clicked.  It is only called externally by p5 if this component
-     * isn't nested
+     * This method is called when the component is clicked.  This listener is only called by a parent or if assigned to
+     * the canvas when it is created!. (https://github.com/processing/p5.js/issues/1437)
      */
-    mouseClicked() {
-        this._onClickListener(this.mouseX, this.mouseY);
-    }
-
-    /**
-     * This method is called when a key is pressed while the component is focused.  It is only called externally by p5
-     * if this component isn't nested
-     */
-    keyPressed() {
-        this._onKeyListener(this.key);
+    mousePressed() {
+        this._onClickListener(this);
     }
 
     /**
@@ -253,14 +252,6 @@ class ImageSketcher extends P5Component {
      */
     set onClickListener(value) {
         this._onClickListener = value;
-    }
-
-    /**
-     * Sets the on key pressed listener.  This listener is only called by p5 if it is the root element
-     * @param value {Function} the event listener
-     */
-    set onKeyListener(value) {
-        this._onKeyListener = value;
     }
 
     /**
@@ -327,7 +318,7 @@ class ImageSketcher extends P5Component {
      */
     set targetImage(value) {
 
-        if (!value instanceof p5.Image) {
+        if (!(value instanceof p5.Image)) {
             throw TypeError("Target image must be of type p5.Image");
         } else {
             let width = this._width;
@@ -345,7 +336,9 @@ class ImageSketcher extends P5Component {
             this._targetImage = this.createImage(width, height);
             this._targetImage.copy(value, 0, 0, value.width, value.height, 0, 0, this._targetImage.width, this._targetImage.height);
             this._targetImage.loadPixels();
-            this.resizeCanvas(width, height, true);
+            if(this._parent === undefined){
+                this.resizeCanvas(width, height, true);
+            }
         }
     }
 
@@ -466,7 +459,7 @@ class ImageSketcher extends P5Component {
      * @param value the new generator
      */
     set particleStartGenerator(value) {
-        if (!value instanceof ParticleGenerator) {
+        if (!(value instanceof ParticleGenerator)) {
             throw TypeError("Particle start generator must be of type ParticleGenerator");
         } else {
             this._particleStartGenerator = value;
@@ -489,7 +482,7 @@ class ImageSketcher extends P5Component {
     set particleBehaviours(value) {
         if (!Array.isArray(value)) {
             throw  TypeError("Particle behaviours must be an array");
-        } else if (value.some(behaviour => !behaviour instanceof ParticleBehaviour)) {
+        } else if (value.some(behaviour => !(behaviour instanceof ParticleBehaviour))) {
             throw  TypeError("All particle behaviours in the list must be be of type ParticleBehaviour");
         } else {
             this._particleBehaviours = value;
@@ -509,7 +502,7 @@ class ImageSketcher extends P5Component {
      * @param value {p5.Vector} the new defaultVelocity
      */
     set defaultVel(value) {
-        if (!value instanceof p5.Vector) {
+        if (value !== undefined && !(value instanceof p5.Vector)) {
             throw TypeError("Default velocity must be of type p5.Vector");
         } else {
             this._defaultVel = value;

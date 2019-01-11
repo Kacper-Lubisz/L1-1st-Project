@@ -206,7 +206,7 @@ class Particle {
      * @param value {p5.Vector} the new position
      */
     set pos(value) {
-        if (!value instanceof p5.Vector) {
+        if (!(value instanceof p5.Vector)) {
             throw TypeError("Position must be an instance of p5.Vector");
         } else {
             this._pos = value;
@@ -234,7 +234,7 @@ class Particle {
      * @param value {p5.Vector} the velocity
      */
     set vel(value) {
-        if (!value instanceof p5.Vector) {
+        if (!(value instanceof p5.Vector)) {
             throw TypeError("Velocity must be an instance of p5.Vector");
         } else {
             this._vel = value;
@@ -254,7 +254,7 @@ class Particle {
      * @param value {p5.Vector} the new force
      */
     set force(value) {
-        if (!value instanceof p5.Vector) {
+        if (!(value instanceof p5.Vector)) {
             throw TypeError("Force must be an instance of p5.Vector");
         } else {
             this._force = value;

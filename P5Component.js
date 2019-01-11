@@ -15,8 +15,9 @@ class P5Component {
      * only called once.
      */
     constructor() {
-        this.isSetup = false;
-        this.isPreloaded = false;
+        this._isSetup = false;
+        this._isPreloaded = false;
+        this._parent = undefined;
 
         // this block emulates an abstract class
         if (this.constructor === P5Component) {
@@ -64,19 +65,31 @@ class P5Component {
         const comp = this; // to remove this ambiguity
 
         this.preload = function () {
-            if (!comp.isPreloaded) {
+            if (comp._sketch === undefined) {
+                throw Error("Preload called on child before the call to initChildPrototype");
+            } else if (!comp._isPreloaded) {
                 originalFunctions.preload();
-                comp.isPreloaded = true;
+                comp._isPreloaded = true;
             }
         };
         this.setup = function (parent) {
-            if (!comp.isSetup) {
+            if (comp._sketch === undefined) {
+                throw Error("Setup called on child before the call to initChildPrototype");
+            } else if (!comp._isPreloaded) {
+                throw Error("Setup called on child before the call to preload");
+            } else if (!comp._isSetup) {
                 originalFunctions.setup(parent);
-                comp.isSetup = true;
+                comp._isSetup = true;
             }
         };
         this.draw = function (canvas) {
-            if (canvas === undefined) {
+            if (comp._sketch === undefined) {
+                throw Error("Draw called on child before the call to initChildPrototype");
+            } else if (!comp._isPreloaded) {
+                throw Error("Draw called on child before the call to preload");
+            } else if (!comp._isSetup) {
+                throw Error("Draw called on child before the call to setup");
+            } else if (canvas === undefined) {
                 canvas = comp; // if no canvas is specified (such as when p5 calls), it should draw on itself
                 // this is under the assumption that canvas is only called with no parameters by p5
                 // this isn't safe, but in js there is no way to use visibility modifiers to prevent this from happening
@@ -133,35 +146,6 @@ class P5Component {
             sketch.preload = component.preload;
             // all of these functions have already been bound to component in the constructor (refer to function.bind)
 
-            // bind all the listeners (that have been implemented) to the sketch
-            const listenersToBind = [
-                // touch event listeners
-                "touchStarted",
-                "touchMoved",
-                "touchEnded",
-                // mouse event listeners
-                "mouseMoved",
-                "mouseDragged",
-                "mousePressed",
-                "mouseReleased",
-                "mouseClicked",
-                "doubleClicked",
-                "mouseWheel",
-                // keyboard event listeners
-                "keyPressed",
-                "keyReleased",
-                "keyTyped",
-                "keyIsDown",
-                // acceleration event listeners
-                "deviceMoved",
-                "deviceTurned",
-                "deviceShaken ",
-            ];
-            listenersToBind.forEach(function (listener) {
-                if (component[listener] !== undefined && typeof component[listener] === "function") {
-                    sketch[listener] = component[listener].bind(component);
-                }
-            });
         };
     }
 
@@ -172,28 +156,32 @@ class P5Component {
      */
     _initPrototype(sketch) {
         // This is defiantly abuse of prototypal inheritance.  The main issues I can identify with this other than
-
         this.__proto__ = P5Component.deepClone(this.__proto__);
-        this.sketch = sketch;
+        this._sketch = sketch;
         // deep clone the prototype, this is so that the other instances
         // are not affected by adding the sketch to the chain
 
         let lastPrototype = this; // add sketch to the end of the prototype chain.
         while (lastPrototype.__proto__ !== Object.prototype) {
             lastPrototype = lastPrototype.__proto__;
+            if(lastPrototype instanceof p5){
+                throw Error("You can't bind one instance of P5Component to multiple p5 sketches.")
+            }
         }
         lastPrototype.__proto__ = sketch;
     }
 
     /**
      * This method is used to instantiate a child component (when a component only exists within another component)
-     * It will give the child access to necessary p5 methods and call setup on it.
+     * It will give the child access to necessary p5 methods.
      * @param child {P5Component} the child to setup
      */
-    parentSetup(child) {
-        if (!child.isSetup) {
-            child._initPrototype(this.sketch);
-            child.setup(this);
+    initChildPrototype(child) {
+        if (this._sketch === undefined) {
+            throw Error("Uninitialised child called initialised to nested child is illegal");
+        } else {
+            child._initPrototype(this._sketch);
+            child._parent = this;
         }
     }
 
@@ -215,6 +203,9 @@ class P5Component {
                 clone[key] = obj[key];
             }
         });
+        if (obj.__proto__ !== null) {
+            Object.setPrototypeOf(clone, P5Component.deepClone(obj.__proto__));
+        }
         return clone;
     }
 

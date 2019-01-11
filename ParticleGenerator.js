@@ -77,7 +77,8 @@ class RandomParticleGenerator extends ParticleGenerator {
      * @return {{pos: (!p5.Vector)}, {color: (!p5.Color)}}
      */
     spawnParticle(sketcher) {
-        const pos = sketcher.createVector(sketcher.random(0, sketcher.width), sketcher.random(0, sketcher.height));
+        const pos = sketcher.createVector(sketcher.random(0, sketcher.targetImage.width),
+            sketcher.random(0, sketcher.targetImage.height));
         const color = sketcher.getColor(sketcher.targetImage, Math.floor(pos.x), Math.floor(pos.y));
         return {pos: pos, color: color};
     }
