@@ -11,6 +11,7 @@ to a more reusable form.
 
 ## Usage Guide
 The component usage guide can be found in reference.html
+The code **must** be hosted over a http server, otherwise browsers may block access to the image files needed.
 
 ## Licence
 
