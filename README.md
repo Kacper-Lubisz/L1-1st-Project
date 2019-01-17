@@ -12,6 +12,12 @@ to a more reusable form.
 ## Usage Guide
 The component usage guide can be found in reference.html
 
+## Licence
+
+If this were to be published it would be published under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
+The original work can be found at this here https://www.openprocessing.org/sketch/486307.
+
+To comply with the MIT licences of Bootstrap, jQuery and Prism the MIT licence is included in the file named LICENCE
 ## Design
 
 The first step to this assignment is to try and understand what an ideal 'reusable component' would look like.  So I set

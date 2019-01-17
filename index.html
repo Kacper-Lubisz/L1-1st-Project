@@ -335,8 +335,8 @@
                     () => behaviours.noise.noiseScale,
                     (value) => behaviours.noise.noiseScale = value),
                 new NumericField("noiseInfluence", undefined, undefined, false, 0,
-                    () => behaviours.noise.noiseScale,
-                    (value) => behaviours.noise.noiseScale = value),
+                    () => behaviours.noise.noiseInfluence,
+                    (value) => behaviours.noise.noiseInfluence = value),
                 new NumericField("noiseTimeFactor", 0, undefined, false, 0,
                     () => behaviours.noise.timeFactor,
                     (value) => behaviours.noise.timeFactor = value),
@@ -353,13 +353,13 @@
                     (vector) => vector.x + ", " + vector.y,
                     () => sketcher.defaultVel,
                     (value) => sketcher.defaulVel = value),
-                new VectorField("attractionKernelSize", 0, undefined, true, "5, 5", 2,
+                new VectorField("attractionKernelSize", 0, 10, true, "5, 5", 2,
                     (number) => [number, number],
                     (array) => array,
                     (array) => array.join(", "),
                     () => behaviours.attraction.kernelSize,
                     (value) => behaviours.attraction.kernelSize = value),
-                new VectorField("evolveKernelSize", 0, undefined, true, "3, 3", 2,
+                new VectorField("evolveKernelSize", 0, 10, true, "3, 3", 2,
                     (number) => [number, number],
                     (array) => array,
                     (array) => array.join(", "),
@@ -894,7 +894,10 @@
             </div>
         </div>
     </div>
-
+	
+	<hr>
+	<a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-sa/3.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/3.0/">Creative Commons Attribution-ShareAlike 3.0 Unported License</a>.
+	
 </div>
 </body>
 </html>
